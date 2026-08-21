@@ -177,8 +177,19 @@ h1 {
 }
 
 .pet-status__avatar {
-  font-size: 48px;
+  width: 200px;
+  height: 200px;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 120px;
+  line-height: 1;
+  overflow: hidden;
+}
+
+img.pet-status__avatar {
+  object-fit: contain;
 }
 
 .pet-status__stage {
@@ -392,4 +403,105 @@ h1 {
 
 .shop__item--owned {
   opacity: 0.7;
+}
+
+.dev-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.dev-panel__title {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.85;
+}
+
+.dev-panel__section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.dev-panel__section:first-of-type {
+  padding-top: 0;
+  border-top: none;
+}
+
+.dev-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.dev-panel__field label {
+  opacity: 0.7;
+}
+
+.dev-panel__field input {
+  width: 90px;
+  padding: 6px 8px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+}
+
+.dev-panel__section-label {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.dev-panel__stage-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dev-panel__section--footer {
+  align-items: center;
+}
+
+.dev-panel button {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.dev-panel button:hover {
+  border-color: var(--text);
+}
+
+.dev-panel__danger {
+  border-color: var(--work);
+  color: var(--work);
+  margin-left: auto;
+}
+
+.dev-panel-toggle {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.dev-panel-toggle:hover {
+  border-color: var(--text);
 }

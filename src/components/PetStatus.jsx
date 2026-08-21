@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { getPetGrowthStage, rollRandomName } from '../utils/pet'
+import { getPetImageUrl } from '../utils/petImages'
 
 export default function PetStatus({ pet, money, skillPoints, onRenamePet }) {
   const [isEditingName, setIsEditingName] = useState(!pet.name)
   const [nameInput, setNameInput] = useState(pet.name)
+  const [imageLoadFailed, setImageLoadFailed] = useState(false)
   const stage = getPetGrowthStage(pet.pomodorosSinceBorn, pet.speciesId)
+  const imageUrl = getPetImageUrl(pet.speciesId, pet.breedId, stage.stageKey)
+  const showImage = imageUrl && !imageLoadFailed
 
   const confirmName = () => {
     const trimmed = nameInput.trim()
@@ -21,9 +25,18 @@ export default function PetStatus({ pet, money, skillPoints, onRenamePet }) {
 
   return (
     <section className="pet-status">
-      <p className="pet-status__avatar" aria-hidden="true">
-        {stage.emoji}
-      </p>
+      {showImage ? (
+        <img
+          className="pet-status__avatar"
+          src={imageUrl}
+          alt={pet.breedLabel}
+          onError={() => setImageLoadFailed(true)}
+        />
+      ) : (
+        <p className="pet-status__avatar" aria-hidden="true">
+          {stage.emoji}
+        </p>
+      )}
       <p className="pet-status__stage">{stage.label}</p>
       <p className="pet-status__info">
         {pet.breedLabel} · {pet.personalityLabel}

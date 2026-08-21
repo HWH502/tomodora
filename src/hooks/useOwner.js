@@ -2,9 +2,12 @@ import { useCallback, useState } from 'react'
 import {
   createPet as createPetInStorage,
   getOwnerState,
+  grantResources as grantResourcesInStorage,
   purchaseShopItem,
   recordPomodoroReward,
   renamePet as renamePetInStorage,
+  resetOwnerState,
+  setPetGrowthProgress,
 } from '../utils/storage'
 
 export function useOwner() {
@@ -28,5 +31,26 @@ export function useOwner() {
     if (next) setOwnerState(next)
   }, [])
 
-  return { ownerState, addPomodoroReward, renamePet, createPet, purchaseItem }
+  const grantResources = useCallback((money, skillPoints) => {
+    setOwnerState(grantResourcesInStorage({ money, skillPoints }))
+  }, [])
+
+  const setGrowthProgress = useCallback((pomodorosSinceBorn) => {
+    setOwnerState(setPetGrowthProgress(pomodorosSinceBorn))
+  }, [])
+
+  const resetOwner = useCallback(() => {
+    setOwnerState(resetOwnerState())
+  }, [])
+
+  return {
+    ownerState,
+    addPomodoroReward,
+    renamePet,
+    createPet,
+    purchaseItem,
+    grantResources,
+    setGrowthProgress,
+    resetOwner,
+  }
 }

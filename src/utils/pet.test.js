@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  GROWTH_STAGE_DEFS,
   LEGACY_HEAD_START_CAP,
   SUGGESTED_PET_NAMES,
   calculateLegacyHeadStart,
@@ -11,33 +12,33 @@ import {
 
 describe('getPetGrowthStage — dog', () => {
   it.each([
-    [0, '🐶', '幼犬階段'],
-    [4, '🐶', '幼犬階段'],
-    [5, '🐕', '活潑成長期'],
-    [14, '🐕', '活潑成長期'],
-    [15, '🦮', '稱職夥伴'],
-    [29, '🦮', '稱職夥伴'],
-    [30, '🐕‍🦺', '訓練有成'],
-    [59, '🐕‍🦺', '訓練有成'],
-    [60, '🐩', '資深老友'],
-    [99, '🐩', '資深老友'],
-    [100, '🏆🐕', '傳奇老狗'],
-    [250, '🏆🐕', '傳奇老狗'],
-  ])('pomodorosSinceBorn=%i -> %s %s', (pomodorosSinceBorn, emoji, label) => {
-    expect(getPetGrowthStage(pomodorosSinceBorn, 'dog')).toEqual({ emoji, label })
+    [0, 'young', '🐶', '幼犬階段'],
+    [4, 'young', '🐶', '幼犬階段'],
+    [5, 'growing', '🐕', '活潑成長期'],
+    [14, 'growing', '🐕', '活潑成長期'],
+    [15, 'capable', '🦮', '稱職夥伴'],
+    [29, 'capable', '🦮', '稱職夥伴'],
+    [30, 'trained', '🐕‍🦺', '訓練有成'],
+    [59, 'trained', '🐕‍🦺', '訓練有成'],
+    [60, 'senior', '🐩', '資深老友'],
+    [99, 'senior', '🐩', '資深老友'],
+    [100, 'legend', '🏆🐕', '傳奇老狗'],
+    [250, 'legend', '🏆🐕', '傳奇老狗'],
+  ])('pomodorosSinceBorn=%i -> %s %s %s', (pomodorosSinceBorn, stageKey, emoji, label) => {
+    expect(getPetGrowthStage(pomodorosSinceBorn, 'dog')).toEqual({ stageKey, emoji, label })
   })
 })
 
 describe('getPetGrowthStage — cat', () => {
   it.each([
-    [0, '🐱', '幼貓階段'],
-    [5, '🐈', '活潑成長期'],
-    [15, '😺', '稱職夥伴'],
-    [30, '😸', '訓練有成'],
-    [60, '😻', '資深老友'],
-    [100, '🏆🐈', '傳奇老貓'],
-  ])('pomodorosSinceBorn=%i -> %s %s', (pomodorosSinceBorn, emoji, label) => {
-    expect(getPetGrowthStage(pomodorosSinceBorn, 'cat')).toEqual({ emoji, label })
+    [0, 'young', '🐱', '幼貓階段'],
+    [5, 'growing', '🐈', '活潑成長期'],
+    [15, 'capable', '😺', '稱職夥伴'],
+    [30, 'trained', '😸', '訓練有成'],
+    [60, 'senior', '😻', '資深老友'],
+    [100, 'legend', '🏆🐈', '傳奇老貓'],
+  ])('pomodorosSinceBorn=%i -> %s %s %s', (pomodorosSinceBorn, stageKey, emoji, label) => {
+    expect(getPetGrowthStage(pomodorosSinceBorn, 'cat')).toEqual({ stageKey, emoji, label })
   })
 
   it('shares the same generic mid-stage labels as dog for stages 2-5', () => {
@@ -50,7 +51,7 @@ describe('getPetGrowthStage — cat', () => {
 
 describe('getPetGrowthStage — unknown species', () => {
   it('falls back to dog when speciesId is missing/invalid', () => {
-    expect(getPetGrowthStage(0, 'dragon')).toEqual({ emoji: '🐶', label: '幼犬階段' })
+    expect(getPetGrowthStage(0, 'dragon')).toEqual({ stageKey: 'young', emoji: '🐶', label: '幼犬階段' })
   })
 })
 
@@ -73,6 +74,19 @@ describe('rollPersonality / rollRandomName', () => {
 
   it('SUGGESTED_PET_NAMES has 6 entries', () => {
     expect(SUGGESTED_PET_NAMES).toHaveLength(6)
+  })
+})
+
+describe('GROWTH_STAGE_DEFS', () => {
+  it('is ordered from highest to lowest threshold and covers 0', () => {
+    expect(GROWTH_STAGE_DEFS.map((def) => def.minPomodoros)).toEqual([100, 60, 30, 15, 5, 0])
+  })
+
+  it('has a matching stageKey/label pair usable by getPetGrowthStage for each threshold', () => {
+    for (const def of GROWTH_STAGE_DEFS) {
+      const stage = getPetGrowthStage(def.minPomodoros, 'dog')
+      expect(typeof stage.label).toBe('string')
+    }
   })
 })
 

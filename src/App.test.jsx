@@ -87,4 +87,20 @@ describe('App', () => {
     expect(screen.queryByText('確認你的寵物')).not.toBeInTheDocument()
     expect(screen.getByPlaceholderText('幫寵物取個名字')).toBeInTheDocument()
   })
+
+  it('opens the dev panel and instantly completes a simulated pomodoro without waiting', () => {
+    const { container } = render(<App />)
+
+    fireEvent.click(screen.getByText('狗'))
+    fireEvent.click(screen.getByText('柴犬'))
+    fireEvent.click(screen.getByText('就是這隻！'))
+
+    fireEvent.click(screen.getByText('工程模式'))
+    fireEvent.click(screen.getByText('模擬完成'))
+
+    expect(container.textContent).toContain('今天已完成 1 個番茄鐘')
+    expect(container.textContent).toContain('💰 50')
+    expect(container.textContent).toContain('⭐ 5')
+    expect(screen.getByText('工作時間')).toBeInTheDocument()
+  })
 })

@@ -240,6 +240,38 @@ describe('cross-day auto-reset', () => {
   })
 })
 
+describe('completeWorkSessionsInstantly', () => {
+  it('fires onWorkSessionComplete and increments todayCount count times without touching phase/secondsLeft', () => {
+    const onWorkSessionComplete = vi.fn()
+    const { result } = renderHook(() => useTimer({ onWorkSessionComplete }))
+
+    act(() => {
+      result.current.completeWorkSessionsInstantly(3)
+    })
+
+    expect(onWorkSessionComplete).toHaveBeenCalledTimes(3)
+    expect(onWorkSessionComplete).toHaveBeenCalledWith(25)
+    expect(result.current.todayCount).toBe(3)
+    expect(result.current.phase).toBe('work')
+    expect(result.current.isRunning).toBe(false)
+    expect(result.current.secondsLeft).toBe(1500)
+  })
+})
+
+describe('simulatePreviousDay', () => {
+  it('rewrites todayCount storage to yesterday, then resolves back to 0', () => {
+    localStorage.setItem(TODAY_COUNT_KEY, JSON.stringify({ date: localDateString(fixedNow), count: 5 }))
+    const { result } = renderHook(() => useTimer())
+    expect(result.current.todayCount).toBe(5)
+
+    act(() => {
+      result.current.simulatePreviousDay()
+    })
+
+    expect(result.current.todayCount).toBe(0)
+  })
+})
+
 describe('StrictMode safety', () => {
   it('does not double-count or double-fire alerts on a completed work session', () => {
     const onWorkSessionComplete = vi.fn()

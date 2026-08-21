@@ -1,14 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createPet,
+  debugSetTodayCount,
   getOwnerState,
   getSettings,
   getTodayCount,
+  grantResources,
   incrementTodayCount,
   purchaseShopItem,
   recordPomodoroReward,
   renamePet,
+  resetOwnerState,
   saveSettings,
+  setPetGrowthProgress,
 } from './storage'
 
 const PERSONALITY_POOL = ['黏人', '獨立', '愛玩', '穩重', '機靈', '溫柔']
@@ -371,6 +375,62 @@ describe('recordPomodoroReward', () => {
     const state = recordPomodoroReward(25)
     expect(state.pet.pomodorosSinceBorn).toBe(2)
     expect(state.lifetimePomodoros).toBe(2)
+  })
+})
+
+describe('grantResources', () => {
+  it('adds money and skillPoints without touching lifetimePomodoros or pet growth', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba' })
+    const before = getOwnerState()
+    const after = grantResources({ money: 100, skillPoints: 7 })
+    expect(after.money).toBe(before.money + 100)
+    expect(after.skillPoints).toBe(before.skillPoints + 7)
+    expect(after.lifetimePomodoros).toBe(before.lifetimePomodoros)
+    expect(after.pet.pomodorosSinceBorn).toBe(before.pet.pomodorosSinceBorn)
+  })
+
+  it('defaults missing fields to 0', () => {
+    const after = grantResources({ money: 50 })
+    expect(after.money).toBe(50)
+    expect(after.skillPoints).toBe(0)
+  })
+})
+
+describe('resetOwnerState', () => {
+  it('clears the pet and resets money/skillPoints back to defaults', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba' })
+    recordPomodoroReward(25)
+    const state = resetOwnerState()
+    expect(state.pet).toBeNull()
+    expect(state.money).toBe(0)
+    expect(state.skillPoints).toBe(0)
+    expect(state.lifetimePomodoros).toBe(0)
+    expect(getOwnerState()).toEqual(state)
+  })
+})
+
+describe('setPetGrowthProgress', () => {
+  it('overwrites pomodorosSinceBorn on the current pet', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba' })
+    const after = setPetGrowthProgress(60)
+    expect(after.pet.pomodorosSinceBorn).toBe(60)
+  })
+
+  it('is a safe no-op when there is no pet yet', () => {
+    const before = getOwnerState()
+    expect(before.pet).toBeNull()
+    const after = setPetGrowthProgress(60)
+    expect(after.pet).toBeNull()
+  })
+})
+
+describe('debugSetTodayCount', () => {
+  it('overwrites the stored date and count', () => {
+    debugSetTodayCount('2026-01-01', 9)
+    expect(JSON.parse(localStorage.getItem(TODAY_COUNT_KEY))).toEqual({
+      date: '2026-01-01',
+      count: 9,
+    })
   })
 })
 

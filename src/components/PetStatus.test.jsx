@@ -1,12 +1,18 @@
 import { useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PetStatus from './PetStatus'
 import { SUGGESTED_PET_NAMES } from '../utils/pet'
+import { getPetImageUrl } from '../utils/petImages'
+
+vi.mock('../utils/petImages', () => ({
+  getPetImageUrl: vi.fn(),
+}))
 
 const basePet = {
   speciesId: 'dog',
+  breedId: 'shiba',
   breedLabel: '柴犬',
   personalityLabel: '穩重',
   pomodorosSinceBorn: 0,
@@ -119,5 +125,28 @@ describe('PetStatus', () => {
     expect(screen.getByText(/17/)).toBeInTheDocument()
     expect(screen.getByText(/活力/)).toBeInTheDocument()
     expect(screen.getByText(/26/)).toBeInTheDocument()
+  })
+
+  it('renders the pet image when getPetImageUrl returns a URL', () => {
+    getPetImageUrl.mockReturnValue('/assets/dog-shiba-young.png')
+    render(<ControlledPetStatus />)
+    const image = screen.getByRole('img', { name: /柴犬/ })
+    expect(image).toHaveAttribute('src', '/assets/dog-shiba-young.png')
+  })
+
+  it('falls back to the emoji when getPetImageUrl returns null', () => {
+    getPetImageUrl.mockReturnValue(null)
+    render(<ControlledPetStatus />)
+    expect(screen.queryByRole('img', { name: /柴犬/ })).not.toBeInTheDocument()
+    expect(screen.getByText('🐶')).toBeInTheDocument()
+  })
+
+  it('falls back to the emoji when the image fails to load at runtime', () => {
+    getPetImageUrl.mockReturnValue('/assets/dog-shiba-young.png')
+    render(<ControlledPetStatus />)
+    const image = screen.getByRole('img', { name: /柴犬/ })
+    fireEvent.error(image)
+    expect(screen.queryByRole('img', { name: /柴犬/ })).not.toBeInTheDocument()
+    expect(screen.getByText('🐶')).toBeInTheDocument()
   })
 })

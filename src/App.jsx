@@ -8,9 +8,11 @@ import TodayStats from './components/TodayStats'
 import PetStatus from './components/PetStatus'
 import PetCreation from './components/PetCreation'
 import Shop from './components/Shop'
+import DevPanel from './components/DevPanel'
 
 function App() {
-  const { ownerState, addPomodoroReward, renamePet, createPet, purchaseItem } = useOwner()
+  const { ownerState, addPomodoroReward, renamePet, createPet, purchaseItem, grantResources, setGrowthProgress, resetOwner } =
+    useOwner()
   const {
     phase,
     isRunning,
@@ -21,8 +23,11 @@ function App() {
     pause,
     reset,
     updateSettings,
+    completeWorkSessionsInstantly,
+    simulatePreviousDay,
   } = useTimer({ onWorkSessionComplete: addPomodoroReward })
   const [showSettings, setShowSettings] = useState(false)
+  const [showDevPanel, setShowDevPanel] = useState(false)
 
   return (
     <main className="app">
@@ -63,6 +68,28 @@ function App() {
         {showSettings ? '關閉設定' : '設定'}
       </button>
       {showSettings && <Settings settings={settings} onSave={updateSettings} />}
+
+      {import.meta.env.DEV && (
+        <>
+          <button
+            type="button"
+            className="dev-panel-toggle"
+            onClick={() => setShowDevPanel((value) => !value)}
+          >
+            {showDevPanel ? '關閉工程模式' : '工程模式'}
+          </button>
+          {showDevPanel && (
+            <DevPanel
+              speciesId={ownerState.pet?.speciesId}
+              onCompletePomodoros={completeWorkSessionsInstantly}
+              onGrantResources={grantResources}
+              onSetGrowthProgress={setGrowthProgress}
+              onResetOwner={resetOwner}
+              onSimulatePreviousDay={simulatePreviousDay}
+            />
+          )}
+        </>
+      )}
     </main>
   )
 }

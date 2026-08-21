@@ -86,4 +86,37 @@ describe('useOwner', () => {
     })
     expect(result.current.ownerState).toEqual(stateAfterFirstPurchase)
   })
+
+  it('grantResources adds money and skillPoints directly', () => {
+    const { result } = renderHook(() => useOwner())
+    act(() => {
+      result.current.grantResources(100, 7)
+    })
+    expect(result.current.ownerState.money).toBe(100)
+    expect(result.current.ownerState.skillPoints).toBe(7)
+  })
+
+  it('setGrowthProgress overwrites the pet growth counter', () => {
+    const { result } = renderHook(() => useOwner())
+    act(() => {
+      result.current.createPet('dog', 'shiba')
+    })
+    act(() => {
+      result.current.setGrowthProgress(60)
+    })
+    expect(result.current.ownerState.pet.pomodorosSinceBorn).toBe(60)
+  })
+
+  it('resetOwner clears the pet and resets money/skillPoints', () => {
+    const { result } = renderHook(() => useOwner())
+    act(() => {
+      result.current.createPet('dog', 'shiba')
+      result.current.addPomodoroReward(25)
+    })
+    act(() => {
+      result.current.resetOwner()
+    })
+    expect(result.current.ownerState.pet).toBeNull()
+    expect(result.current.ownerState.money).toBe(0)
+  })
 })

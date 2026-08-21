@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getSettings, getTodayCount, incrementTodayCount, saveSettings } from '../utils/storage'
+import {
+  debugSetTodayCount,
+  getSettings,
+  getTodayCount,
+  incrementTodayCount,
+  saveSettings,
+} from '../utils/storage'
 import { fireAlert, requestNotificationPermission } from '../utils/notify'
 
 const WORK_SESSIONS_PER_LONG_BREAK = 4
@@ -127,6 +133,26 @@ export function useTimer({ onWorkSessionComplete } = {}) {
     setSecondsLeft(durationSecondsFor(phase, settings))
   }, [clearTick, phase, settings])
 
+  const completeWorkSessionsInstantly = useCallback(
+    (count) => {
+      for (let i = 0; i < count; i += 1) {
+        setTodayCount(incrementTodayCount())
+        onWorkSessionCompleteRef.current?.(settings.workMinutes)
+      }
+    },
+    [settings],
+  )
+
+  const simulatePreviousDay = useCallback(() => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const year = yesterday.getFullYear()
+    const month = String(yesterday.getMonth() + 1).padStart(2, '0')
+    const day = String(yesterday.getDate()).padStart(2, '0')
+    debugSetTodayCount(`${year}-${month}-${day}`, todayCount)
+    setTodayCount(getTodayCount())
+  }, [todayCount])
+
   const updateSettings = useCallback(
     (newSettings) => {
       saveSettings(newSettings)
@@ -148,5 +174,7 @@ export function useTimer({ onWorkSessionComplete } = {}) {
     pause,
     reset,
     updateSettings,
+    completeWorkSessionsInstantly,
+    simulatePreviousDay,
   }
 }

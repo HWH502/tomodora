@@ -39,7 +39,7 @@ function rollRandomFluctuation() {
 
 export const SUGGESTED_PET_NAMES = ['小豆', '旺財', '可樂', '饅頭', '大福', '麻糬']
 
-const GROWTH_STAGE_DEFS = [
+export const GROWTH_STAGE_DEFS = [
   { minPomodoros: 100, stageKey: 'legend' },
   { minPomodoros: 60, stageKey: 'senior', label: '資深老友' },
   { minPomodoros: 30, stageKey: 'trained', label: '訓練有成' },
@@ -78,7 +78,7 @@ export function getPetGrowthStage(pomodorosSinceBorn, speciesId) {
   const species = getSpeciesById(speciesId) ?? getSpeciesById('dog')
   const def = GROWTH_STAGE_DEFS.find((candidate) => pomodorosSinceBorn >= candidate.minPomodoros)
   const override = species.growthStageOverrides[def.stageKey]
-  return { emoji: override.emoji, label: override.label ?? def.label }
+  return { stageKey: def.stageKey, emoji: override.emoji, label: override.label ?? def.label }
 }
 
 export function calculateLegacyHeadStart(previousPetPomodorosSinceBorn) {

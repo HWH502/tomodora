@@ -207,6 +207,32 @@ export function recordPomodoroReward(durationMinutes) {
   })
 }
 
+export function grantResources({ money = 0, skillPoints = 0 } = {}) {
+  const state = getOwnerState()
+  return saveOwnerState({
+    ...state,
+    money: state.money + money,
+    skillPoints: state.skillPoints + skillPoints,
+  })
+}
+
+export function resetOwnerState() {
+  return saveOwnerState(defaultOwnerState())
+}
+
+export function setPetGrowthProgress(pomodorosSinceBorn) {
+  const state = getOwnerState()
+  if (!state.pet) return state
+  return saveOwnerState({
+    ...state,
+    pet: { ...state.pet, pomodorosSinceBorn },
+  })
+}
+
+export function debugSetTodayCount(dateString, count) {
+  localStorage.setItem(TODAY_COUNT_KEY, JSON.stringify({ date: dateString, count }))
+}
+
 export function purchaseShopItem(itemId) {
   const item = getShopItem(itemId)
   if (!item) return null
