@@ -1,0 +1,12 @@
+# 排除前端打包與套件
+node_modules/
+dist/
+.next/
+build/
+
+# 排除多媒體與日誌
+*.mp4
+*.png
+*.jpg
+logs/
+*.log

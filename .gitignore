@@ -1,0 +1,33 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# 寵物美術素材：暫時都不進 git
+# 1024px 原始圖是本機備份，App 用不到，長期都不需要進 git
+src/assets/pets_originals_1024
+# 256x256 正式圖是 App 真正會用到的素材，目前先不存檔；
+# 之後要把素材納入版本控制時，把下面兩行刪掉即可。
+# 注意：只排除圖片檔，同資料夾的 STYLE_GUIDE.md / PROMPTS.md 仍在 git 裡。
+src/assets/pets/**/*.png
+src/assets/pets/**/.gitkeep
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

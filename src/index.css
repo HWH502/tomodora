@@ -1,0 +1,395 @@
+:root {
+  --text: #2b2733;
+  --bg: #fdfcfb;
+  --border: #e5e4e7;
+  --work: #d9534f;
+  --short-break: #4a9d6e;
+  --long-break: #3f7fbf;
+
+  font: 18px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #e5e4e7;
+    --bg: #16171d;
+    --border: #2e303a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100svh;
+  padding: 32px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.app__columns {
+  width: 100%;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.app__left,
+.app__right {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .app__columns {
+    flex-direction: column;
+  }
+}
+
+h1 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.timer {
+  width: 100%;
+  padding: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+
+.timer--work {
+  border-color: var(--work);
+}
+
+.timer--shortBreak {
+  border-color: var(--short-break);
+}
+
+.timer--longBreak {
+  border-color: var(--long-break);
+}
+
+.timer__phase {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.timer__display {
+  font-size: 64px;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+}
+
+.controls button,
+.settings-toggle,
+.settings button {
+  font-size: 16px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.controls button:hover,
+.settings-toggle:hover,
+.settings button:hover {
+  border-color: var(--text);
+}
+
+.today-stats {
+  font-size: 15px;
+  opacity: 0.85;
+}
+
+.settings {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.settings label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.settings input {
+  width: 80px;
+  padding: 6px 8px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+}
+
+.settings__hint {
+  font-size: 12px;
+  opacity: 0.6;
+  margin: 0;
+}
+
+.pet-status {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pet-status__avatar {
+  font-size: 48px;
+  margin: 0;
+}
+
+.pet-status__stage {
+  font-weight: 600;
+  margin: 0;
+}
+
+.pet-status__info {
+  font-size: 14px;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.pet-status__stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.pet-status__name-field {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pet-status__name-field input {
+  padding: 6px 8px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+}
+
+.pet-status__name-field button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+}
+
+.pet-status__name-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.pet-status__name-display button {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+}
+
+.pet-status__currency {
+  display: flex;
+  gap: 16px;
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+.pet-status__hint {
+  font-size: 11px;
+  opacity: 0.6;
+  font-style: normal;
+  display: block;
+}
+
+.pet-creation {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pet-creation__prompt {
+  font-weight: 600;
+  margin: 0;
+}
+
+.pet-creation__species,
+.pet-creation__breeds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pet-creation__species button,
+.pet-creation__breeds button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pet-creation__species-button--selected {
+  border-color: currentColor;
+  font-weight: 600;
+}
+
+.pet-creation__preview-info {
+  font-size: 14px;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.pet-creation__preview-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.pet-creation__preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pet-creation__preview-actions button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pet-creation__preview-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shop {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.shop__title {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.shop__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shop__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.shop__item-emoji {
+  font-size: 20px;
+}
+
+.shop__item-name {
+  flex: 1;
+}
+
+.shop__item-count {
+  opacity: 0.6;
+}
+
+.shop__item button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.shop__item button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shop__item--owned {
+  opacity: 0.7;
+}
