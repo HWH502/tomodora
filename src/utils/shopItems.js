@@ -6,6 +6,7 @@ export const SHOP_ITEMS = [
   { id: 'outfit', name: '衣服', emoji: '👕', cost: 40, category: 'collectible' },
   { id: 'kibble', name: '飼料', emoji: '🍖', cost: 4, category: 'consumable' },
   { id: 'supplement', name: '營養品', emoji: '💊', cost: 8, category: 'consumable' },
+  { id: 'grooming', name: '盥洗用品', emoji: '🧴', cost: 6, category: 'consumable' },
 ]
 
 export function getShopItem(itemId) {

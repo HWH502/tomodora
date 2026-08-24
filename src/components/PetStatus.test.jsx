@@ -150,3 +150,65 @@ describe('PetStatus', () => {
     expect(screen.getByText('🐶')).toBeInTheDocument()
   })
 })
+
+function makePet(overrides = {}) {
+  return {
+    speciesId: 'dog',
+    breedId: 'shiba',
+    breedLabel: '柴犬',
+    personalityLabel: '穩重',
+    name: '小豆',
+    pomodorosSinceBorn: 0,
+    stats: { learning: 10, obedience: 10, friendliness: 10, energy: 10 },
+    hunger: 60,
+    cleanliness: 60,
+    health: 60,
+    affection: 60,
+    recentEvents: [],
+    ...overrides,
+  }
+}
+
+describe('PetStatus phase 4 additions', () => {
+  it('renders the needs bars', () => {
+    render(<PetStatus pet={makePet()} money={0} skillPoints={0} onRenamePet={() => {}} onVisitVet={() => {}} />)
+    expect(screen.getByText(/🍗/)).toBeInTheDocument()
+  })
+
+  it('calls onVisitVet when the vet button is clicked', () => {
+    const onVisitVet = vi.fn()
+    render(
+      <PetStatus
+        pet={makePet({ health: 30 })}
+        money={100}
+        skillPoints={0}
+        onRenamePet={() => {}}
+        onVisitVet={onVisitVet}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /就醫/ }))
+    expect(onVisitVet).toHaveBeenCalled()
+  })
+
+  it('shows a low-health hint when health is below 20', () => {
+    render(<PetStatus pet={makePet({ health: 10 })} money={0} skillPoints={0} onRenamePet={() => {}} onVisitVet={() => {}} />)
+    expect(screen.getByText('需要就醫')).toBeInTheDocument()
+  })
+
+  it('disables the vet button when health is at or above the eligibility threshold, even with enough money', () => {
+    render(<PetStatus pet={makePet({ health: 40 })} money={1000} skillPoints={0} onRenamePet={() => {}} onVisitVet={() => {}} />)
+    expect(screen.getByRole('button', { name: /就醫/ })).toBeDisabled()
+  })
+
+  it('disables the vet button when health is low but money is short', () => {
+    render(<PetStatus pet={makePet({ health: 30 })} money={10} skillPoints={0} onRenamePet={() => {}} onVisitVet={() => {}} />)
+    expect(screen.getByRole('button', { name: /就醫/ })).toBeDisabled()
+  })
+})
+
+describe('PetStatus phase 3C additions', () => {
+  it('renders the pet skills section', () => {
+    render(<PetStatus pet={makePet()} money={0} skillPoints={0} onRenamePet={() => {}} onVisitVet={() => {}} />)
+    expect(screen.getByRole('heading', { name: '寵物技能' })).toBeInTheDocument()
+  })
+})

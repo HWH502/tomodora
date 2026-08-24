@@ -1,0 +1,108 @@
+import { useRef, useState } from 'react'
+import { applySaveFile, buildSaveFile, getSaveFileSummary, parseSaveFile, serializeSaveFile } from '../utils/saveFile'
+import { todayDateString } from '../utils/date'
+
+const ERROR_MESSAGES = {
+  invalid: '這不是有效的番茄鐘存檔檔案，請確認選對檔案。',
+  tooNew: '這份存檔的版本比目前的遊戲新，請重新整理頁面更新到最新版本後再試一次。',
+}
+
+export default function BackupRestore({ reloadPage = () => window.location.reload() } = {}) {
+  const fileInputRef = useRef(null)
+  const [pendingImport, setPendingImport] = useState(null)
+  const [importError, setImportError] = useState(null)
+
+  const handleExport = () => {
+    const saveFile = buildSaveFile()
+    const blob = new Blob([serializeSaveFile(saveFile)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `番茄鐘備份-${todayDateString()}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0]
+    event.target.value = ''
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = parseSaveFile(String(reader.result))
+      if (result.ok) {
+        setImportError(null)
+        setPendingImport(result.data)
+      } else {
+        setImportError(ERROR_MESSAGES[result.error])
+        setPendingImport(null)
+      }
+    }
+    reader.onerror = () => {
+      setImportError(ERROR_MESSAGES.invalid)
+      setPendingImport(null)
+    }
+    reader.readAsText(file)
+  }
+
+  const handleConfirmImport = () => {
+    applySaveFile(pendingImport)
+    reloadPage()
+  }
+
+  const handleCancelImport = () => {
+    setPendingImport(null)
+  }
+
+  const summary = pendingImport ? getSaveFileSummary(pendingImport) : null
+
+  const exportedAtLabel = (() => {
+    if (!summary?.exportedAt) return '未知時間'
+    const date = new Date(summary.exportedAt)
+    return Number.isNaN(date.getTime()) ? '未知時間' : date.toLocaleString()
+  })()
+
+  return (
+    <div className="backup-restore">
+      <h3 className="backup-restore__title">備份與還原</h3>
+
+      <button type="button" onClick={handleExport}>
+        匯出存檔
+      </button>
+
+      <button type="button" onClick={() => fileInputRef.current?.click()}>
+        匯入存檔
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="backup-restore__file-input"
+        onChange={handleFileChange}
+      />
+
+      {importError && (
+        <p className="backup-restore__error" role="alert">
+          {importError}
+        </p>
+      )}
+
+      {summary && (
+        <div className="backup-restore__confirm" role="alertdialog">
+          <p>
+            這份存檔是 {exportedAtLabel} 匯出的，寵物：
+            {summary.petName ?? '尚未養寵物'}，身價 {summary.money} 元。
+          </p>
+          <p className="backup-restore__warning">這會蓋掉現在的進度，這個動作無法復原，確定要繼續嗎？</p>
+          <button type="button" onClick={handleConfirmImport}>
+            確定覆蓋並匯入
+          </button>
+          <button type="button" onClick={handleCancelImport}>
+            取消
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import { getPetGrowthStage, rollRandomName } from '../utils/pet'
 import { getPetImageUrl } from '../utils/petImages'
+import PetNeedsBars from './PetNeedsBars'
+import PetSkills from './PetSkills'
+import { canVisitVet, DANGER_THRESHOLD, RANDOM_EVENT_LABELS, VET_COST } from '../utils/petNeeds'
 
-export default function PetStatus({ pet, money, skillPoints, onRenamePet }) {
+const EVENT_LABELS = {
+  ...RANDOM_EVENT_LABELS,
+  obedienceIncident: '寵物惹了點小麻煩',
+}
+
+export default function PetStatus({ pet, money, skillPoints, onRenamePet, onVisitVet }) {
   const [isEditingName, setIsEditingName] = useState(!pet.name)
   const [nameInput, setNameInput] = useState(pet.name)
   const [imageLoadFailed, setImageLoadFailed] = useState(false)
@@ -48,6 +56,31 @@ export default function PetStatus({ pet, money, skillPoints, onRenamePet }) {
         <li>友善度 {pet.stats.friendliness}</li>
         <li>活力 {pet.stats.energy}</li>
       </ul>
+
+      <PetNeedsBars pet={pet} />
+
+      <PetSkills pet={pet} />
+
+      {pet.health < DANGER_THRESHOLD && <p className="pet-status__vet-hint">需要就醫</p>}
+      <button
+        type="button"
+        className="pet-status__vet-button"
+        onClick={onVisitVet}
+        disabled={!canVisitVet({ health: pet.health, money })}
+      >
+        就醫（{VET_COST} 💰）
+      </button>
+
+      {pet.recentEvents?.length > 0 && (
+        <ul className="pet-status__events">
+          {pet.recentEvents
+            .slice()
+            .reverse()
+            .map((event) => (
+              <li key={event.occurredAt}>{EVENT_LABELS[event.id] ?? event.id}</li>
+            ))}
+        </ul>
+      )}
 
       {isEditingName ? (
         <div className="pet-status__name-field">

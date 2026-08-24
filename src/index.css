@@ -26,6 +26,7 @@
 
 body {
   margin: 0;
+  scrollbar-gutter: stable;
 }
 
 .app {
@@ -38,28 +39,70 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
+  zoom: 1.1;
 }
 
 .app__columns {
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: flex-start;
 }
 
+.app__timer-pet-row {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 20px;
+  align-items: stretch;
+}
+
 .app__left,
 .app__right {
-  flex: 1;
-  min-width: 260px;
+  flex: 0 0 340px;
+  width: 340px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  align-self: stretch;
   gap: 16px;
 }
 
+.app__right > .pet-status,
+.app__right > .pet-creation {
+  flex: 1;
+}
+
+.app__left {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.app__skill {
+  flex: 1 1 480px;
+  min-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+@media (min-width: 1100px) {
+  .app {
+    max-width: 1700px;
+  }
+}
+
 @media (max-width: 600px) {
-  .app__columns {
+  .app__columns,
+  .app__timer-pet-row {
     flex-direction: column;
+  }
+
+  .app__left,
+  .app__right {
+    width: 100%;
   }
 }
 
@@ -130,6 +173,14 @@ h1 {
   opacity: 0.85;
 }
 
+.settings-slot {
+  width: 100%;
+}
+
+.settings-slot--hidden {
+  visibility: hidden;
+}
+
 .settings {
   width: 100%;
   display: flex;
@@ -165,6 +216,60 @@ h1 {
   margin: 0;
 }
 
+.backup-restore {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+  margin-top: 12px;
+}
+
+.backup-restore__title {
+  margin: 0;
+  font-size: 15px;
+}
+
+.backup-restore button {
+  font-size: 16px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.backup-restore button:hover {
+  border-color: var(--text);
+}
+
+.backup-restore__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.backup-restore__error {
+  color: #d33;
+  font-size: 14px;
+  margin: 0;
+}
+
+.backup-restore__warning {
+  font-weight: bold;
+}
+
 .pet-status {
   width: 100%;
   padding: 20px;
@@ -173,6 +278,7 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-evenly;
   gap: 6px;
 }
 
@@ -268,6 +374,140 @@ img.pet-status__avatar {
   display: block;
 }
 
+.pet-needs {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.pet-needs__mood {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.pet-needs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.pet-status__vet-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--work);
+}
+
+.pet-status__vet-button {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pet-status__vet-button:hover:not(:disabled) {
+  border-color: var(--text);
+}
+
+.pet-status__vet-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pet-status__events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.pet-status__events li {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+.memorial-wall-toggle {
+  width: 100%;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.memorial-wall-toggle:hover {
+  border-color: var(--text);
+}
+
+.memorial-wall,
+.memorial-wall__empty {
+  width: 100%;
+}
+
+.memorial-wall__empty {
+  padding: 20px;
+  text-align: center;
+  opacity: 0.7;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.memorial-wall {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memorial-wall__item {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-align: left;
+}
+
+.memorial-wall__name {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.memorial-wall__detail {
+  margin: 0 0 4px;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.memorial-wall__reason {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
 .pet-creation {
   width: 100%;
   padding: 20px;
@@ -354,18 +594,26 @@ img.pet-status__avatar {
   text-align: left;
 }
 
-.shop__title {
+.shop__toggle {
   font-size: 16px;
-  margin: 0 0 12px;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
 }
 
 .shop__list {
   list-style: none;
-  margin: 0;
+  margin: 12px 0 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px 16px;
 }
 
 .shop__item {
@@ -403,6 +651,176 @@ img.pet-status__avatar {
 
 .shop__item--owned {
   opacity: 0.7;
+}
+
+.skill-tree {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.skill-tree__toggle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.skill-tree__points {
+  margin: 12px 0 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.skill-tree__body {
+  margin-top: 8px;
+  columns: 230px 3;
+  column-gap: 20px;
+}
+
+.skill-tree__branch {
+  margin-top: 0.75rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  break-inside: avoid;
+}
+
+.skill-tree__branch h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.skill-tree__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skill-tree__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.skill-tree__item-label {
+  flex: 1;
+}
+
+.skill-tree__item-level {
+  opacity: 0.6;
+  font-size: 0.85rem;
+}
+
+.skill-tree__item-status {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.skill-tree__item button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.skill-tree__item button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pet-skills {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.pet-skills__heading {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pet-skills__badge-grid {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pet-skills__badge-item {
+  position: relative;
+}
+
+.pet-skills__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pet-skills__badge--locked {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.pet-skills__badge-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.pet-skills__badge-icon--placeholder {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pet-skills__tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  width: max-content;
+  max-width: 180px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #1f1f1f;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
 }
 
 .dev-panel {
@@ -504,4 +922,261 @@ img.pet-status__avatar {
 
 .dev-panel-toggle:hover {
   border-color: var(--text);
+}
+
+.focus-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.focus-summary__card {
+  flex: 1 1 160px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.focus-summary__label {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.focus-summary__value {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.focus-heatmap__year-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.focus-heatmap__year-label {
+  font-weight: 700;
+  min-width: 4ch;
+  text-align: center;
+}
+
+.focus-heatmap__month-row {
+  display: flex;
+  width: 100%;
+}
+
+.focus-heatmap__weekday-gutter-spacer {
+  flex: 0 0 auto;
+  width: 1.5em;
+}
+
+.focus-heatmap__month-labels {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.focus-heatmap__month-label {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.focus-heatmap__grid-row {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+}
+
+.focus-heatmap__weekday-gutter {
+  flex: 0 0 auto;
+  width: 1.5em;
+  display: flex;
+  flex-direction: column;
+}
+
+.focus-heatmap__weekday-label {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.focus-heatmap__grid {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: clamp(1px, 0.3vw, 3px);
+  /* overflow must stay visible so tooltips (which pop up above/beside their
+     cell) aren't clipped for the top row or the leftmost/rightmost columns.
+     The grid's own cell layout is fluid-width and never overflows this box
+     horizontally, so this doesn't introduce a scrollbar. */
+}
+
+.focus-heatmap__week {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1px, 0.3vw, 3px);
+}
+
+.focus-heatmap__cell-wrapper {
+  position: relative;
+}
+
+.focus-heatmap__cell {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background-color: #ebedf0;
+  cursor: pointer;
+}
+
+.focus-heatmap__cell--empty {
+  visibility: hidden;
+  cursor: default;
+}
+
+.focus-heatmap__cell--level-1 { background-color: #c6e48b; }
+.focus-heatmap__cell--level-2 { background-color: #7bc96f; }
+.focus-heatmap__cell--level-3 { background-color: #396f3a; }
+.focus-heatmap__cell--level-4 { background-color: #1b4d1e; }
+
+.focus-heatmap__cell--gen-0 { box-shadow: inset 0 0 0 1px #9bb1d6; }
+.focus-heatmap__cell--gen-1 { box-shadow: inset 0 0 0 1px #d6a99b; }
+
+.focus-heatmap__milestone-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background-color: #ff9800;
+  pointer-events: none;
+}
+
+.focus-heatmap__tooltip {
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: #222;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  z-index: 1;
+}
+
+.focus-heatmap__legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.focus-heatmap__legend-swatch {
+  display: inline-block;
+  width: 0.65em;
+  height: 0.65em;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  cursor: default;
+}
+
+.focus-trend__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.focus-trend__granularity {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.focus-trend__tab {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.focus-trend__tab--active {
+  background: #396f3a;
+  color: #fff;
+  border-color: #396f3a;
+}
+
+.focus-trend__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 160px;
+  border-bottom: 1px solid var(--border);
+}
+
+.focus-trend__bar-column {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.focus-trend__bar {
+  width: 100%;
+  background: #7bc96f;
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+}
+
+.focus-trend__bar-label {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.focus-stats-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  width: 100%;
+  align-self: stretch;
+}
+
+.focus-stats-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.focus-stats-toggle {
+  margin: 0.5rem 0;
 }

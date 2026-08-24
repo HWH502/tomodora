@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   createPet as createPetInStorage,
+  getOwnerPetProgressCounts,
   getOwnerState,
   grantResources as grantResourcesInStorage,
   purchaseShopItem,
@@ -8,14 +9,29 @@ import {
   renamePet as renamePetInStorage,
   resetOwnerState,
   setPetGrowthProgress,
+  setPetNeeds as setPetNeedsInStorage,
+  unlockSingleOwnerSkill,
+  upgradeLinearOwnerSkill,
+  upgradeSpecializationOwnerSkill,
+  visitVet as visitVetInStorage,
 } from '../utils/storage'
+import { getFocusHistory } from '../utils/focusHistory'
 
 export function useOwner() {
-  const [ownerState, setOwnerState] = useState(getOwnerState)
+  const [initialState] = useState(getOwnerState)
+  const [ownerState, setOwnerState] = useState(initialState)
+  const [autoPurchaseLog, setAutoPurchaseLog] = useState(initialState._autoPurchaseLog ?? null)
+  const [focusHistory, setFocusHistory] = useState(getFocusHistory)
+  const [focusHistoryTrimmed, setFocusHistoryTrimmed] = useState(false)
 
   const addPomodoroReward = useCallback((durationMinutes) => {
-    setOwnerState(recordPomodoroReward(durationMinutes))
+    const next = recordPomodoroReward(durationMinutes)
+    setOwnerState(next)
+    setFocusHistory(getFocusHistory())
+    if (next._focusHistoryTrimmed) setFocusHistoryTrimmed(true)
   }, [])
+
+  const clearFocusHistoryTrimmed = useCallback(() => setFocusHistoryTrimmed(false), [])
 
   const renamePet = useCallback((name) => {
     setOwnerState(renamePetInStorage(name))
@@ -39,9 +55,37 @@ export function useOwner() {
     setOwnerState(setPetGrowthProgress(pomodorosSinceBorn))
   }, [])
 
+  const setPetNeeds = useCallback((needs) => {
+    setOwnerState(setPetNeedsInStorage(needs))
+  }, [])
+
   const resetOwner = useCallback(() => {
     setOwnerState(resetOwnerState())
   }, [])
+
+  const visitVet = useCallback(() => {
+    const next = visitVetInStorage()
+    if (next) setOwnerState(next)
+  }, [])
+
+  const upgradeLinearSkill = useCallback((trackId) => {
+    const next = upgradeLinearOwnerSkill(trackId)
+    if (next) setOwnerState(next)
+  }, [])
+
+  const upgradeSpecializationSkill = useCallback((category, tag) => {
+    const next = upgradeSpecializationOwnerSkill(category, tag)
+    if (next) setOwnerState(next)
+  }, [])
+
+  const unlockSingleSkill = useCallback((trackId) => {
+    const next = unlockSingleOwnerSkill(trackId)
+    if (next) setOwnerState(next)
+  }, [])
+
+  const clearAutoPurchaseLog = useCallback(() => setAutoPurchaseLog(null), [])
+
+  const petProgressCounts = useMemo(() => getOwnerPetProgressCounts(), [ownerState])
 
   return {
     ownerState,
@@ -51,6 +95,17 @@ export function useOwner() {
     purchaseItem,
     grantResources,
     setGrowthProgress,
+    setPetNeeds,
     resetOwner,
+    visitVet,
+    upgradeLinearSkill,
+    upgradeSpecializationSkill,
+    unlockSingleSkill,
+    petProgressCounts,
+    autoPurchaseLog,
+    clearAutoPurchaseLog,
+    focusHistory,
+    focusHistoryTrimmed,
+    clearFocusHistoryTrimmed,
   }
 }

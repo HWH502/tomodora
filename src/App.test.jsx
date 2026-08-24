@@ -103,4 +103,75 @@ describe('App', () => {
     expect(container.textContent).toContain('⭐ 5')
     expect(screen.getByText('工作時間')).toBeInTheDocument()
   })
+
+  it('reveals skill track content after a single click on the skill tree toggle', () => {
+    render(<App />)
+
+    expect(screen.queryByText('訓練技巧')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('技能樹 ▸'))
+
+    expect(screen.getByText('訓練技巧')).toBeInTheDocument()
+  })
+
+  it('toggles between the main layout and the focus stats page', () => {
+    render(<App />)
+    expect(screen.getByText('今天已完成', { exact: false })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '查看統計' }))
+    expect(screen.getByText('專注成效統計')).toBeInTheDocument()
+    expect(screen.queryByText('今天已完成', { exact: false })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '關閉統計' }))
+    expect(screen.getByText('今天已完成', { exact: false })).toBeInTheDocument()
+  })
+
+  it('shows a trim notice banner after a pomodoro completion trims old focus history, and can dismiss it', () => {
+    const seeded = { version: 1, days: {} }
+    let cursor = new Date(2026, 0, 1)
+    for (let i = 0; i < 91; i += 1) {
+      const y = cursor.getFullYear()
+      const m = String(cursor.getMonth() + 1).padStart(2, '0')
+      const d = String(cursor.getDate()).padStart(2, '0')
+      seeded.days[`${y}-${m}-${d}`] = { count: 1, minutes: 10, growthMilestoneStageKey: null }
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    localStorage.setItem('pomodoro.focusHistory', JSON.stringify(seeded))
+
+    const originalSetItem = Storage.prototype.setItem
+    let focusHistoryCalls = 0
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function mocked(key, value) {
+      if (key === 'pomodoro.focusHistory') {
+        focusHistoryCalls += 1
+        if (focusHistoryCalls === 1) {
+          throw new DOMException('quota exceeded', 'QuotaExceededError')
+        }
+      }
+      return originalSetItem.call(this, key, value)
+    })
+
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '開始' }))
+    act(() => {
+      vi.advanceTimersByTime(25 * 60 * 1000)
+    })
+
+    expect(screen.getByText('儲存空間不足', { exact: false })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '知道了' }))
+    expect(screen.queryByText('儲存空間不足', { exact: false })).not.toBeInTheDocument()
+
+    setItemSpy.mockRestore()
+  })
+})
+
+describe('App - 備份與還原', () => {
+  it('shows the backup/restore section inside the settings panel', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByText('設定'))
+
+    expect(screen.getByText('備份與還原')).toBeInTheDocument()
+    expect(screen.getByText('匯出存檔')).toBeInTheDocument()
+    expect(screen.getByText('匯入存檔')).toBeInTheDocument()
+  })
 })

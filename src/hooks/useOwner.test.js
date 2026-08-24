@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useOwner } from './useOwner'
 
 describe('useOwner', () => {
@@ -107,6 +107,20 @@ describe('useOwner', () => {
     expect(result.current.ownerState.pet.pomodorosSinceBorn).toBe(60)
   })
 
+  it('setPetNeeds overwrites the given needs fields on the current pet', () => {
+    const { result } = renderHook(() => useOwner())
+    act(() => {
+      result.current.createPet('dog', 'shiba')
+    })
+    act(() => {
+      result.current.setPetNeeds({ hunger: 5, cleanliness: 95, health: 50, affection: 0 })
+    })
+    expect(result.current.ownerState.pet.hunger).toBe(5)
+    expect(result.current.ownerState.pet.cleanliness).toBe(95)
+    expect(result.current.ownerState.pet.health).toBe(50)
+    expect(result.current.ownerState.pet.affection).toBe(0)
+  })
+
   it('resetOwner clears the pet and resets money/skillPoints', () => {
     const { result } = renderHook(() => useOwner())
     act(() => {
@@ -119,4 +133,43 @@ describe('useOwner', () => {
     expect(result.current.ownerState.pet).toBeNull()
     expect(result.current.ownerState.money).toBe(0)
   })
+})
+
+it('sets focusHistoryTrimmed when a pomodoro completion triggers the 90-day trim', () => {
+  const seeded = { version: 1, days: {} }
+  let cursor = new Date(2026, 0, 1)
+  for (let i = 0; i < 91; i += 1) {
+    const y = cursor.getFullYear()
+    const m = String(cursor.getMonth() + 1).padStart(2, '0')
+    const d = String(cursor.getDate()).padStart(2, '0')
+    seeded.days[`${y}-${m}-${d}`] = { count: 1, minutes: 10, growthMilestoneStageKey: null }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  localStorage.setItem('pomodoro.focusHistory', JSON.stringify(seeded))
+
+  const originalSetItem = Storage.prototype.setItem
+  let focusHistoryCalls = 0
+  const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function mocked(key, value) {
+    if (key === 'pomodoro.focusHistory') {
+      focusHistoryCalls += 1
+      if (focusHistoryCalls === 1) {
+        throw new DOMException('quota exceeded', 'QuotaExceededError')
+      }
+    }
+    return originalSetItem.call(this, key, value)
+  })
+
+  const { result } = renderHook(() => useOwner())
+  act(() => {
+    result.current.addPomodoroReward(25)
+  })
+
+  expect(result.current.focusHistoryTrimmed).toBe(true)
+
+  act(() => {
+    result.current.clearFocusHistoryTrimmed()
+  })
+  expect(result.current.focusHistoryTrimmed).toBe(false)
+
+  setItemSpy.mockRestore()
 })

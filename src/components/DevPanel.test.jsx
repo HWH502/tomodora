@@ -46,6 +46,24 @@ describe('DevPanel', () => {
     expect(onSetGrowthProgress).toHaveBeenCalledWith(0)
   })
 
+  it('sets the four needs values with the entered numbers', async () => {
+    const user = userEvent.setup()
+    const onSetPetNeeds = vi.fn()
+    render(<DevPanel onSetPetNeeds={onSetPetNeeds} />)
+
+    await user.clear(screen.getByLabelText('飽食度'))
+    await user.type(screen.getByLabelText('飽食度'), '10')
+    await user.clear(screen.getByLabelText('潔淨度'))
+    await user.type(screen.getByLabelText('潔淨度'), '20')
+    await user.clear(screen.getByLabelText('健康度'))
+    await user.type(screen.getByLabelText('健康度'), '30')
+    await user.clear(screen.getByLabelText('好感度'))
+    await user.type(screen.getByLabelText('好感度'), '40')
+    await user.click(screen.getByText('設定需求數值'))
+
+    expect(onSetPetNeeds).toHaveBeenCalledWith({ hunger: 10, cleanliness: 20, health: 30, affection: 40 })
+  })
+
   it('resets the save only after the user confirms', async () => {
     const user = userEvent.setup()
     const onResetOwner = vi.fn()

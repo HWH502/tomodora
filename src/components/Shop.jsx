@@ -1,15 +1,28 @@
+import { useState } from 'react'
 import { SHOP_ITEMS } from '../utils/shopItems'
+import { getShopPrice } from '../utils/storage'
 
-export default function Shop({ money, ownedCollectibles, consumablePurchases, onPurchase }) {
+export default function Shop({ money, ownedCollectibles, consumablePurchases, ownerSkillTree, onPurchase }) {
+  const [expanded, setExpanded] = useState(false)
+
   return (
     <section className="shop">
-      <h2 className="shop__title">商店</h2>
+      <button
+        type="button"
+        className="shop__toggle"
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={expanded}
+      >
+        商店 {expanded ? '▾' : '▸'}
+      </button>
+      {expanded && (
       <ul className="shop__list">
         {SHOP_ITEMS.map((item) => {
           const isCollectible = item.category === 'collectible'
           const owned = isCollectible && ownedCollectibles.includes(item.id)
           const purchaseCount = consumablePurchases[item.id] || 0
-          const affordable = money >= item.cost
+          const price = getShopPrice(item.id, ownerSkillTree)
+          const affordable = money >= price
           const disabled = owned || !affordable
 
           return (
@@ -24,12 +37,21 @@ export default function Shop({ money, ownedCollectibles, consumablePurchases, on
                 )}
               </span>
               <button type="button" disabled={disabled} onClick={() => onPurchase(item.id)}>
-                {owned ? '已擁有' : `${item.cost} 💰`}
+                {owned ? (
+                  '已擁有'
+                ) : price < item.cost ? (
+                  <>
+                    <s className="shop__item-original-price">{item.cost}</s> {price} 💰
+                  </>
+                ) : (
+                  `${price} 💰`
+                )}
               </button>
             </li>
           )
         })}
       </ul>
+      )}
     </section>
   )
 }

@@ -21,6 +21,13 @@ src/assets/pets_originals_1024
 src/assets/pets/**/*.png
 src/assets/pets/**/.gitkeep
 
+# Git worktrees created for isolated task work
+.claude/worktrees/
+
+# 寵物技能徽章圖：跟寵物美術素材一樣，之後 AI 生成完再決定要不要納入版本控制
+src/assets/skills/**/*.png
+src/assets/skills/**/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
