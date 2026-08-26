@@ -72,6 +72,9 @@ function App() {
           currentPet={ownerState.pet}
           petMemorials={ownerState.petMemorials}
           onClose={() => setShowStats(false)}
+          lifetimePomodoros={ownerState.lifetimePomodoros}
+          lifetimeFocusMinutes={ownerState.lifetimeFocusMinutes}
+          lifetimeFocusMinutesStartedAt={ownerState.lifetimeFocusMinutesStartedAt}
         />
       ) : (
         <>

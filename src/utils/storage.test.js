@@ -136,6 +136,8 @@ describe('getOwnerState', () => {
   it('returns stored data verbatim when already in the current shape', () => {
     const stored = {
       lifetimePomodoros: 12,
+      lifetimeFocusMinutes: 0,
+      lifetimeFocusMinutesStartedAt: '2026-01-01',
       money: 100,
       skillPoints: 8,
       pet: {
@@ -1286,5 +1288,147 @@ describe('restoreOwnerState', () => {
     expect(state.petMemorials).toEqual([])
     expect(state.ownedCollectibles).toEqual([])
     expect(state.consumablePurchases).toEqual({})
+  })
+})
+
+describe('lifetimeFocusMinutes', () => {
+  it('defaults to 0 for a fresh owner state', () => {
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutes).toBe(0)
+  })
+
+  it('backfills lifetimeFocusMinutes for owner state saved before this feature existed', () => {
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({
+        lifetimePomodoros: 12,
+        money: 10,
+        skillPoints: 5,
+        pet: null,
+        petMemorials: [],
+        ownedCollectibles: [],
+        consumablePurchases: {},
+        ownerSkillTree: {
+          trainingTechnique: 0, socialTraining: 0,
+          sizeSpecialization: { small: 0, medium: 0, large: 0 },
+          speciesSpecialization: { dog: 0, cat: 0, rodent: 0 },
+          businessSense: 0, bargainHunter: 0,
+          bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
+          autoFeed: false, autoGrooming: false, instantGuard: 0, petInsurance: 0,
+        },
+        pomodoroStreak: { currentStreak: 0, lastCompletedDate: null, milestonesReached: [] },
+      }),
+    )
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutes).toBe(0)
+  })
+
+  it('accumulates durationMinutes across sequential recordPomodoroReward calls with no pet', () => {
+    recordPomodoroReward(25)
+    const state = recordPomodoroReward(10)
+    expect(state.lifetimeFocusMinutes).toBe(35)
+  })
+
+  it('accumulates durationMinutes across sequential recordPomodoroReward calls with a pet', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba' })
+    recordPomodoroReward(25)
+    const state = recordPomodoroReward(25)
+    expect(state.lifetimeFocusMinutes).toBe(50)
+  })
+
+  it('backfills legacy owner shape (dog/totalPomodoros) to 0', () => {
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({
+        dog: { breedLabel: '柴犬', name: '小白', personalityLabel: '穩重' },
+        totalPomodoros: 7,
+        money: 20,
+        skillPoints: 3,
+      }),
+    )
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutes).toBe(0)
+  })
+})
+
+describe('lifetimeFocusMinutesStartedAt', () => {
+  it('defaults to today for a fresh owner state', () => {
+    const fixedNow = new Date(2026, 7, 25, 10, 0, 0)
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow)
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutesStartedAt).toBe('2026-08-25')
+    vi.useRealTimers()
+  })
+
+  it('backfills lifetimeFocusMinutesStartedAt to today for owner state saved before this feature existed', () => {
+    const fixedNow = new Date(2026, 7, 25, 10, 0, 0)
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow)
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({
+        lifetimePomodoros: 12,
+        lifetimeFocusMinutes: 300,
+        money: 10,
+        skillPoints: 5,
+        pet: null,
+        petMemorials: [],
+        ownedCollectibles: [],
+        consumablePurchases: {},
+        ownerSkillTree: {
+          trainingTechnique: 0, socialTraining: 0,
+          sizeSpecialization: { small: 0, medium: 0, large: 0 },
+          speciesSpecialization: { dog: 0, cat: 0, rodent: 0 },
+          businessSense: 0, bargainHunter: 0,
+          bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
+          autoFeed: false, autoGrooming: false, instantGuard: 0, petInsurance: 0,
+        },
+        pomodoroStreak: { currentStreak: 0, lastCompletedDate: null, milestonesReached: [] },
+      }),
+    )
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutesStartedAt).toBe('2026-08-25')
+    vi.useRealTimers()
+  })
+
+  it('does not overwrite an already-set lifetimeFocusMinutesStartedAt', () => {
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({ ...getOwnerState(), lifetimeFocusMinutesStartedAt: '2026-01-01' }),
+    )
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutesStartedAt).toBe('2026-01-01')
+  })
+
+  it('repairs a non-string lifetimeFocusMinutesStartedAt (e.g. from a corrupted import) back to today', () => {
+    const fixedNow = new Date(2026, 7, 25, 10, 0, 0)
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow)
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({ ...getOwnerState(), lifetimeFocusMinutesStartedAt: 12345 }),
+    )
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutesStartedAt).toBe('2026-08-25')
+    vi.useRealTimers()
+  })
+
+  it('backfills legacy owner shape (dog/totalPomodoros) to today', () => {
+    const fixedNow = new Date(2026, 7, 25, 10, 0, 0)
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow)
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({
+        dog: { breedLabel: '柴犬', name: '小白', personalityLabel: '穩重' },
+        totalPomodoros: 7,
+        money: 20,
+        skillPoints: 3,
+      }),
+    )
+    const state = getOwnerState()
+    expect(state.lifetimeFocusMinutesStartedAt).toBe('2026-08-25')
+    vi.useRealTimers()
   })
 })

@@ -68,6 +68,8 @@ function buildConsumableRestoreAmounts(ownerSkillTree) {
 function defaultOwnerState() {
   return {
     lifetimePomodoros: 0,
+    lifetimeFocusMinutes: 0,
+    lifetimeFocusMinutesStartedAt: todayDateString(),
     money: 0,
     skillPoints: 0,
     pet: null,
@@ -148,6 +150,8 @@ function migrateLegacyOwnerState(parsed) {
 
   return {
     lifetimePomodoros: legacyTotal,
+    lifetimeFocusMinutes: 0,
+    lifetimeFocusMinutesStartedAt: todayDateString(),
     money: Number.isFinite(parsed.money) ? parsed.money : 0,
     skillPoints: Number.isFinite(parsed.skillPoints) ? parsed.skillPoints : 0,
     pet: {
@@ -288,6 +292,12 @@ export function getOwnerState() {
       if (!state.pomodoroStreak) {
         state = { ...state, pomodoroStreak: defaultStreakState() }
       }
+      if (!Number.isFinite(state.lifetimeFocusMinutes)) {
+        state = { ...state, lifetimeFocusMinutes: 0 }
+      }
+      if (typeof state.lifetimeFocusMinutesStartedAt !== 'string') {
+        state = { ...state, lifetimeFocusMinutesStartedAt: todayDateString() }
+      }
       if (!Array.isArray(state.petMemorials)) {
         state = { ...state, petMemorials: [] }
       }
@@ -416,6 +426,7 @@ export function recordPomodoroReward(durationMinutes) {
     const saved = saveOwnerState({
       ...state,
       lifetimePomodoros: state.lifetimePomodoros + 1,
+      lifetimeFocusMinutes: state.lifetimeFocusMinutes + durationMinutes,
       money: state.money + money,
       skillPoints: state.skillPoints + totalSkillPoints,
       pomodoroStreak: nextStreak,
@@ -468,6 +479,7 @@ export function recordPomodoroReward(durationMinutes) {
   const saved = saveOwnerState({
     ...state,
     lifetimePomodoros: state.lifetimePomodoros + 1,
+    lifetimeFocusMinutes: state.lifetimeFocusMinutes + durationMinutes,
     money: Math.max(0, state.money + money + moneyDelta),
     skillPoints: state.skillPoints + totalSkillPoints,
     pet: nextPet,
