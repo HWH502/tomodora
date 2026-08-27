@@ -27,8 +27,7 @@ const MONTH_LABELS = [
 
 const LEGEND_LEVELS = [0, 1, 2, 3, 4]
 
-export default function FocusHeatmap({ history, currentPet, petMemorials }) {
-  const [year, setYear] = useState(() => new Date().getFullYear())
+export default function FocusHeatmap({ history, currentPet, petMemorials, year }) {
   const [activeDate, setActiveDate] = useState(null)
   const suppressHoverUntilRef = useRef(0)
 
@@ -86,16 +85,6 @@ export default function FocusHeatmap({ history, currentPet, petMemorials }) {
 
   return (
     <section className="focus-heatmap">
-      <div className="focus-heatmap__year-nav">
-        <button type="button" aria-label="上一年" onClick={() => setYear((y) => y - 1)}>
-          ←
-        </button>
-        <span className="focus-heatmap__year-label">{year}</span>
-        <button type="button" aria-label="下一年" onClick={() => setYear((y) => y + 1)}>
-          →
-        </button>
-      </div>
-
       <div className="focus-heatmap__month-row">
         <div className="focus-heatmap__weekday-gutter-spacer" aria-hidden="true" />
         <div className="focus-heatmap__month-labels">

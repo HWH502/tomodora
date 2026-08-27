@@ -55,8 +55,8 @@ describe('getUnlockedPetSkillIds', () => {
     expect(ids).toEqual(expect.arrayContaining(['sit', 'potty', 'selfEntertain', 'houseWatch', 'charm', 'sturdy', 'thrifty', 'veteran', 'luckyStar']))
   })
 
-  it('returns no species-specific skills for species outside dog/cat (e.g. rodent placeholder)', () => {
-    const pet = makePet({ speciesId: 'rodent', pomodorosSinceBorn: 100, stats: { learning: 0, obedience: 0, friendliness: 0, energy: 0 } })
+  it('returns no species-specific skills for species outside dog/cat', () => {
+    const pet = makePet({ speciesId: 'unknown', pomodorosSinceBorn: 100, stats: { learning: 0, obedience: 0, friendliness: 0, energy: 0 } })
     const ids = getUnlockedPetSkillIds(pet)
     expect(ids).not.toContain('sit')
     expect(ids).not.toContain('clawGentle')
@@ -82,7 +82,7 @@ describe('getSpeciesSkillPool', () => {
   })
 
   it('returns an empty array for an unknown species', () => {
-    expect(getSpeciesSkillPool('rodent')).toEqual([])
+    expect(getSpeciesSkillPool('unknown')).toEqual([])
   })
 })
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   createPet as createPetInStorage,
   getOwnerPetProgressCounts,
@@ -15,7 +15,7 @@ import {
   upgradeSpecializationOwnerSkill,
   visitVet as visitVetInStorage,
 } from '../utils/storage'
-import { getFocusHistory } from '../utils/focusHistory'
+import { getFocusHistory, whenFocusHistoryReady } from '../utils/focusHistory'
 
 export function useOwner() {
   const [initialState] = useState(getOwnerState)
@@ -23,6 +23,14 @@ export function useOwner() {
   const [autoPurchaseLog, setAutoPurchaseLog] = useState(initialState._autoPurchaseLog ?? null)
   const [focusHistory, setFocusHistory] = useState(getFocusHistory)
   const [focusHistoryTrimmed, setFocusHistoryTrimmed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    whenFocusHistoryReady().then(() => {
+      if (!cancelled) setFocusHistory(getFocusHistory())
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const addPomodoroReward = useCallback((durationMinutes) => {
     const next = recordPomodoroReward(durationMinutes)

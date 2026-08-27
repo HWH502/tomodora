@@ -45,6 +45,15 @@ const SETTINGS_KEY = 'pomodoro.settings'
 const TODAY_COUNT_KEY = 'pomodoro.todayCount'
 const OWNER_KEY = 'pomodoro.owner'
 
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // localStorage can throw (quota exceeded, private browsing) - the in-memory
+    // state the caller returns still reflects the update, it just won't persist.
+  }
+}
+
 const DEFAULT_SETTINGS = {
   workMinutes: 25,
   shortBreakMinutes: 5,
@@ -99,7 +108,7 @@ export function getSettings() {
 }
 
 export function saveSettings(settings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+  safeSetItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
 export function getTodayCount() {
@@ -113,14 +122,14 @@ export function getTodayCount() {
   } catch {
     // fall through to reset below
   }
-  localStorage.setItem(TODAY_COUNT_KEY, JSON.stringify({ date: today, count: 0 }))
+  safeSetItem(TODAY_COUNT_KEY, JSON.stringify({ date: today, count: 0 }))
   return 0
 }
 
 export function incrementTodayCount() {
   const current = getTodayCount()
   const next = current + 1
-  localStorage.setItem(
+  safeSetItem(
     TODAY_COUNT_KEY,
     JSON.stringify({ date: todayDateString(), count: next }),
   )
@@ -129,7 +138,7 @@ export function incrementTodayCount() {
 
 function saveOwnerState(state) {
   const { _autoPurchaseLog, ...toPersist } = state
-  localStorage.setItem(OWNER_KEY, JSON.stringify(toPersist))
+  safeSetItem(OWNER_KEY, JSON.stringify(toPersist))
   return state
 }
 
@@ -294,6 +303,15 @@ export function getOwnerState() {
       }
       if (!Number.isFinite(state.lifetimeFocusMinutes)) {
         state = { ...state, lifetimeFocusMinutes: 0 }
+      }
+      if (!Number.isFinite(state.money)) {
+        state = { ...state, money: 0 }
+      }
+      if (!Number.isFinite(state.skillPoints)) {
+        state = { ...state, skillPoints: 0 }
+      }
+      if (!Number.isFinite(state.lifetimePomodoros)) {
+        state = { ...state, lifetimePomodoros: 0 }
       }
       if (typeof state.lifetimeFocusMinutesStartedAt !== 'string') {
         state = { ...state, lifetimeFocusMinutesStartedAt: todayDateString() }
@@ -522,7 +540,7 @@ export function setPetNeeds({ hunger, cleanliness, health, affection } = {}) {
 }
 
 export function debugSetTodayCount(dateString, count) {
-  localStorage.setItem(TODAY_COUNT_KEY, JSON.stringify({ date: dateString, count }))
+  safeSetItem(TODAY_COUNT_KEY, JSON.stringify({ date: dateString, count }))
 }
 
 export function getShopPrice(itemId, ownerSkillTree) {
@@ -560,7 +578,7 @@ export function purchaseShopItem(itemId) {
 function countOwnerPetProgress(state) {
   const allPets = [state.pet, ...state.petMemorials].filter(Boolean)
   const size = { small: 0, medium: 0, large: 0 }
-  const species = { dog: 0, cat: 0, rodent: 0 }
+  const species = { dog: 0, cat: 0 }
   for (const pet of allPets) {
     const tag = sizeTagOf(pet)
     if (tag) size[tag] += 1

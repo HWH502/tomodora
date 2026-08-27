@@ -1,4 +1,4 @@
-import { forwardRef, useState } from 'react'
+import { forwardRef, useEffect, useState } from 'react'
 import { getPetImageUrl } from '../utils/petImages'
 
 const ShareCard = forwardRef(function ShareCard({ data }, ref) {
@@ -82,6 +82,10 @@ const ShareCard = forwardRef(function ShareCard({ data }, ref) {
 function PetFigure({ pet }) {
   const [imageLoadFailed, setImageLoadFailed] = useState(false)
   const imageUrl = getPetImageUrl(pet.speciesId, pet.breedId, pet.stageKey)
+
+  useEffect(() => {
+    setImageLoadFailed(false)
+  }, [imageUrl])
 
   if (!imageUrl || imageLoadFailed) {
     return <p className="share-card__pet-figure-emoji">{pet.emoji}</p>

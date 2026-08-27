@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getPetGrowthStage, rollRandomName } from '../utils/pet'
 import { getPetImageUrl } from '../utils/petImages'
 import PetNeedsBars from './PetNeedsBars'
@@ -17,6 +17,10 @@ export default function PetStatus({ pet, money, skillPoints, onRenamePet, onVisi
   const stage = getPetGrowthStage(pet.pomodorosSinceBorn, pet.speciesId)
   const imageUrl = getPetImageUrl(pet.speciesId, pet.breedId, stage.stageKey)
   const showImage = imageUrl && !imageLoadFailed
+
+  useEffect(() => {
+    setImageLoadFailed(false)
+  }, [imageUrl])
 
   const confirmName = () => {
     const trimmed = nameInput.trim()
@@ -46,6 +50,32 @@ export default function PetStatus({ pet, money, skillPoints, onRenamePet, onVisi
         </p>
       )}
       <p className="pet-status__stage">{stage.label}</p>
+
+      {isEditingName ? (
+        <div className="pet-status__name-field">
+          <input
+            type="text"
+            placeholder="幫寵物取個名字"
+            value={nameInput}
+            onChange={(event) => setNameInput(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && confirmName()}
+          />
+          <button type="button" title="隨機取名" onClick={() => setNameInput(rollRandomName())}>
+            🎲
+          </button>
+          <button type="button" onClick={confirmName}>
+            確認
+          </button>
+        </div>
+      ) : (
+        <div className="pet-status__name-display">
+          <span>{pet.name}</span>
+          <button type="button" title="修改名字" onClick={startEditingName}>
+            ✏️
+          </button>
+        </div>
+      )}
+
       <p className="pet-status__info">
         {pet.breedLabel} · {pet.personalityLabel}
       </p>
@@ -82,37 +112,9 @@ export default function PetStatus({ pet, money, skillPoints, onRenamePet, onVisi
         </ul>
       )}
 
-      {isEditingName ? (
-        <div className="pet-status__name-field">
-          <input
-            type="text"
-            placeholder="幫寵物取個名字"
-            value={nameInput}
-            onChange={(event) => setNameInput(event.target.value)}
-            onKeyDown={(event) => event.key === 'Enter' && confirmName()}
-          />
-          <button type="button" title="隨機取名" onClick={() => setNameInput(rollRandomName())}>
-            🎲
-          </button>
-          <button type="button" onClick={confirmName}>
-            確認
-          </button>
-        </div>
-      ) : (
-        <div className="pet-status__name-display">
-          <span>{pet.name}</span>
-          <button type="button" title="修改名字" onClick={startEditingName}>
-            ✏️
-          </button>
-        </div>
-      )}
-
       <div className="pet-status__currency">
         <span>💰 {money}</span>
-        <span>
-          ⭐ {skillPoints}
-          <em className="pet-status__hint">（尚未開放使用）</em>
-        </span>
+        <span>⭐ {skillPoints}</span>
       </div>
     </section>
   )

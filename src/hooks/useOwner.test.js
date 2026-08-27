@@ -1,6 +1,7 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useOwner } from './useOwner'
+import { __resetForTests, __reinitForTests, __openDbForTests, __putDayRecordForTests } from '../utils/focusHistory'
 
 describe('useOwner', () => {
   it('starts with the default owner state and no pet', () => {
@@ -133,9 +134,39 @@ describe('useOwner', () => {
     expect(result.current.ownerState.pet).toBeNull()
     expect(result.current.ownerState.money).toBe(0)
   })
+
+  it('refreshes focusHistory once IndexedDB hydration finishes after mount', async () => {
+    await __resetForTests()
+    const db = await __openDbForTests()
+    await __putDayRecordForTests(db, { date: '2026-08-24', count: 1, minutes: 25, growthMilestoneStageKey: null })
+    // Close this ad-hoc connection before reinitializing/resetting again — an open
+    // connection anywhere blocks indexedDB.deleteDatabase() from ever completing,
+    // which would hang the next test's __resetForTests() (see the same pattern in
+    // focusHistory.test.js's 'IndexedDB wrapper' describe block).
+    db.close()
+
+    // Simulate a fresh app load: kick off reinitialization but don't await it yet,
+    // so the hook's synchronous initial read happens before hydration completes,
+    // and the effect has to pick up the data once whenFocusHistoryReady() resolves.
+    const reinitPromise = __reinitForTests()
+
+    const { result } = renderHook(() => useOwner())
+
+    await reinitPromise
+    await waitFor(() => {
+      expect(result.current.focusHistory.days['2026-08-24']).toEqual({
+        count: 1,
+        minutes: 25,
+        growthMilestoneStageKey: null,
+      })
+    })
+  })
 })
 
-it('sets focusHistoryTrimmed when a pomodoro completion triggers the 90-day trim', () => {
+it('sets focusHistoryTrimmed when a pomodoro completion triggers the 90-day trim', async () => {
+  vi.stubGlobal('indexedDB', undefined)
+  await __resetForTests()
+
   const seeded = { version: 1, days: {} }
   let cursor = new Date(2026, 0, 1)
   for (let i = 0; i < 91; i += 1) {
@@ -146,6 +177,7 @@ it('sets focusHistoryTrimmed when a pomodoro completion triggers the 90-day trim
     cursor.setDate(cursor.getDate() + 1)
   }
   localStorage.setItem('pomodoro.focusHistory', JSON.stringify(seeded))
+  await __resetForTests()
 
   const originalSetItem = Storage.prototype.setItem
   let focusHistoryCalls = 0
@@ -159,17 +191,20 @@ it('sets focusHistoryTrimmed when a pomodoro completion triggers the 90-day trim
     return originalSetItem.call(this, key, value)
   })
 
-  const { result } = renderHook(() => useOwner())
-  act(() => {
-    result.current.addPomodoroReward(25)
-  })
+  try {
+    const { result } = renderHook(() => useOwner())
+    act(() => {
+      result.current.addPomodoroReward(25)
+    })
 
-  expect(result.current.focusHistoryTrimmed).toBe(true)
+    expect(result.current.focusHistoryTrimmed).toBe(true)
 
-  act(() => {
-    result.current.clearFocusHistoryTrimmed()
-  })
-  expect(result.current.focusHistoryTrimmed).toBe(false)
-
-  setItemSpy.mockRestore()
+    act(() => {
+      result.current.clearFocusHistoryTrimmed()
+    })
+    expect(result.current.focusHistoryTrimmed).toBe(false)
+  } finally {
+    setItemSpy.mockRestore()
+    vi.unstubAllGlobals()
+  }
 })

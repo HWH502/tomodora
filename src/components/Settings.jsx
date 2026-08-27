@@ -9,7 +9,12 @@ export default function Settings({ settings, onSave }) {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    onSave(form)
+    const sanitize = (value) => (Number.isFinite(value) && value >= 1 ? value : 1)
+    onSave({
+      workMinutes: sanitize(form.workMinutes),
+      shortBreakMinutes: sanitize(form.shortBreakMinutes),
+      longBreakMinutes: sanitize(form.longBreakMinutes),
+    })
   }
 
   return (

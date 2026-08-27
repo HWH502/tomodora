@@ -7,10 +7,9 @@ function emptyHistory() {
 }
 
 describe('FocusHeatmap', () => {
-  it('renders the current year label and a full grid of day cells', () => {
-    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} />)
+  it('renders a full grid of day cells for the given year', () => {
     const currentYear = new Date().getFullYear()
-    expect(screen.getByText(String(currentYear))).toBeInTheDocument()
+    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} year={currentYear} />)
     // Most years need 53 week-columns, but some (e.g. leap years starting on
     // a Sunday) legitimately need 54 to show every real day. Assert the
     // shape (a whole number of week-columns) instead of hardcoding 53.
@@ -22,18 +21,21 @@ describe('FocusHeatmap', () => {
     expect(cellCount).toBeGreaterThanOrEqual(53 * 7)
   })
 
-  it('moves to the previous year when the back arrow is clicked', () => {
-    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} />)
-    const currentYear = new Date().getFullYear()
-    fireEvent.click(screen.getByRole('button', { name: '上一年' }))
-    expect(screen.getByText(String(currentYear - 1))).toBeInTheDocument()
+  it('renders a different grid when the year prop changes', () => {
+    const dateString = '2026-02-01'
+    const history = { version: 1, days: { [dateString]: { count: 1, minutes: 10, growthMilestoneStageKey: null } } }
+    const { rerender } = render(<FocusHeatmap history={history} currentPet={null} petMemorials={[]} year={2026} />)
+    expect(screen.getByTestId(`focus-heatmap-cell-${dateString}`)).toBeInTheDocument()
+
+    rerender(<FocusHeatmap history={history} currentPet={null} petMemorials={[]} year={2025} />)
+    expect(screen.queryByTestId(`focus-heatmap-cell-${dateString}`)).not.toBeInTheDocument()
   })
 
   it('shows date, count, and minutes in a tooltip on hover', () => {
     const year = new Date().getFullYear()
     const dateString = `${year}-03-01`
     const history = { version: 1, days: { [dateString]: { count: 2, minutes: 50, growthMilestoneStageKey: null } } }
-    render(<FocusHeatmap history={history} currentPet={null} petMemorials={[]} />)
+    render(<FocusHeatmap history={history} currentPet={null} petMemorials={[]} year={year} />)
     const cell = screen.getByTestId(`focus-heatmap-cell-${dateString}`)
     fireEvent.mouseEnter(cell)
     expect(screen.getByRole('tooltip')).toHaveTextContent('3/1')
@@ -46,21 +48,22 @@ describe('FocusHeatmap', () => {
     const year = new Date().getFullYear()
     const dateString = `${year}-03-01`
     const history = { version: 1, days: { [dateString]: { count: 1, minutes: 25, growthMilestoneStageKey: 'growing' } } }
-    render(<FocusHeatmap history={history} currentPet={null} petMemorials={[]} />)
+    render(<FocusHeatmap history={history} currentPet={null} petMemorials={[]} year={year} />)
     const cell = screen.getByTestId(`focus-heatmap-cell-${dateString}`)
     fireEvent.mouseEnter(cell)
     expect(screen.getByRole('tooltip')).toHaveTextContent('長大到')
   })
 
   it('renders a month label for the current month somewhere in the grid', () => {
-    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} />)
+    const currentYear = new Date().getFullYear()
+    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} year={currentYear} />)
     const currentMonth = new Date().getMonth() + 1
     const MONTH_ABBR = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     expect(screen.getByText(MONTH_ABBR[currentMonth])).toBeInTheDocument()
   })
 
   it('shows sparse weekday labels for Mon/Wed/Fri only', () => {
-    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} />)
+    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} year={new Date().getFullYear()} />)
     expect(screen.getAllByText('Mon').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Wed').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Fri').length).toBeGreaterThan(0)
@@ -72,18 +75,10 @@ describe('FocusHeatmap', () => {
   })
 
   it('positions a month label on the week-column containing that month\'s 1st even when the 1st falls on a Sunday', () => {
-    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} />)
     // Feb 1, 2026 is a Sunday (the last row of a Monday-first week) — the
     // exact case that previously caused the "2月" label to land one
     // week-column late, on the week AFTER the one containing Feb 1.
-    const targetYear = 2026
-    const currentYear = new Date().getFullYear()
-    const diff = targetYear - currentYear
-    const navButton = screen.getByRole('button', { name: diff < 0 ? '上一年' : '下一年' })
-    for (let i = 0; i < Math.abs(diff); i += 1) {
-      fireEvent.click(navButton)
-    }
-    expect(screen.getByText(String(targetYear))).toBeInTheDocument()
+    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} year={2026} />)
 
     expect(screen.getByText('Feb')).toBeInTheDocument()
 
@@ -97,7 +92,7 @@ describe('FocusHeatmap', () => {
   })
 
   it('renders a legend with Less/More labels and 5 color-level swatches', () => {
-    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} />)
+    render(<FocusHeatmap history={emptyHistory()} currentPet={null} petMemorials={[]} year={new Date().getFullYear()} />)
     expect(screen.getByText('Less')).toBeInTheDocument()
     expect(screen.getByText('More')).toBeInTheDocument()
     const swatches = screen.getAllByTestId('focus-heatmap-legend-swatch')

@@ -7,7 +7,9 @@ import {
   isSpeciesTagAvailable,
   sizeTagOf,
   SKILL_TRACK_CATALOG,
+  SKILL_TRACK_DESCRIPTIONS,
 } from '../utils/ownerSkillTree'
+import { useEdgeAwareTooltip } from '../hooks/useEdgeAwareTooltip'
 
 const BRANCH_LABELS = {
   nurture: '養育系',
@@ -29,6 +31,7 @@ export default function SkillTree({
   onUnlockSingle,
 }) {
   const [expanded, setExpanded] = useState(false)
+  const tooltip = useEdgeAwareTooltip({ tooltipMaxWidth: 220 })
 
   return (
     <section className="skill-tree">
@@ -58,6 +61,7 @@ export default function SkillTree({
                     onUpgradeLinear={onUpgradeLinear}
                     onUpgradeSpecialization={onUpgradeSpecialization}
                     onUnlockSingle={onUnlockSingle}
+                    tooltip={tooltip}
                   />
                 ))}
               </ul>
@@ -66,6 +70,42 @@ export default function SkillTree({
         </div>
       )}
     </section>
+  )
+}
+
+function SkillLabel({ track, tooltip, children }) {
+  const { activeId, activeAlign, showTooltip, hideTooltip, handleMouseEnter, handlePointerUp } = tooltip
+  const isActive = activeId === track.id
+  const tooltipId = `skill-tree-tooltip-${track.id}`
+  const tooltipText = `${track.label}：${SKILL_TRACK_DESCRIPTIONS[track.id]}`
+
+  return (
+    <span className="skill-tree__item-label">
+      <span className="skill-tree__item-label-text-wrapper">
+        <span
+          className="skill-tree__item-label-text"
+          tabIndex={0}
+          aria-describedby={isActive ? tooltipId : undefined}
+          onMouseEnter={(event) => handleMouseEnter(track.id, event)}
+          onMouseLeave={() => hideTooltip(track.id)}
+          onFocus={(event) => showTooltip(track.id, event.currentTarget)}
+          onBlur={() => hideTooltip(track.id)}
+          onPointerUp={(event) => handlePointerUp(track.id, event)}
+        >
+          {track.label}
+        </span>
+        {isActive && (
+          <span
+            id={tooltipId}
+            role="tooltip"
+            className={`skill-tree__tooltip skill-tree__tooltip--align-${activeAlign}`}
+          >
+            {tooltipText}
+          </span>
+        )}
+      </span>
+      {children}
+    </span>
   )
 }
 
@@ -78,6 +118,7 @@ function SkillTrackRow({
   onUpgradeLinear,
   onUpgradeSpecialization,
   onUnlockSingle,
+  tooltip,
 }) {
   if (track.type === 'single') {
     const unlocked = ownerSkillTree[track.id]
@@ -85,7 +126,7 @@ function SkillTrackRow({
     const affordable = ok && skillPoints >= cost
     return (
       <li className="skill-tree__item">
-        <span className="skill-tree__item-label">{track.label}</span>
+        <SkillLabel track={track} tooltip={tooltip} />
         <button type="button" disabled={unlocked || !affordable} onClick={() => onUnlockSingle(track.id)}>
           {unlocked ? '已解鎖' : `解鎖（${cost} 點）`}
         </button>
@@ -105,11 +146,10 @@ function SkillTrackRow({
 
     return (
       <li className="skill-tree__item">
-        <span className="skill-tree__item-label">
-          {track.label}
+        <SkillLabel track={track} tooltip={tooltip}>
           <span className="skill-tree__item-level"> Lv.{level}/3</span>
           {level > 0 && <span className="skill-tree__item-status">{isActive ? '（生效中）' : '（暫不生效）'}</span>}
-        </span>
+        </SkillLabel>
         {!available ? (
           <span className="skill-tree__item-status">尚無資料，暫不可解鎖</span>
         ) : check.ok ? (
@@ -133,10 +173,9 @@ function SkillTrackRow({
 
   return (
     <li className="skill-tree__item">
-      <span className="skill-tree__item-label">
-        {track.label}
+      <SkillLabel track={track} tooltip={tooltip}>
         <span className="skill-tree__item-level"> Lv.{level}/3</span>
-      </span>
+      </SkillLabel>
       {check.ok ? (
         <button type="button" disabled={!affordable} onClick={() => onUpgradeLinear(track.id)}>
           升級（{check.cost} 點）

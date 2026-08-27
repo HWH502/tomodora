@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applySaveFile, buildSaveFile, CURRENT_SCHEMA_VERSION, serializeSaveFile, parseSaveFile, getSaveFileSummary } from './saveFile'
 import { createPet, getOwnerState, getSettings, saveSettings } from './storage'
-import { getFocusHistory } from './focusHistory'
+import { getFocusHistory, __resetForTests } from './focusHistory'
 
 const fixedNow = new Date(2026, 2, 15, 10, 0, 0)
 
-beforeEach(() => {
-  vi.useFakeTimers()
+beforeEach(async () => {
+  vi.useRealTimers()  // Ensure real timers for the reset
+  await __resetForTests()
+  vi.useFakeTimers()  // Switch to fake timers for the test
   vi.setSystemTime(fixedNow)
 })
 
@@ -73,6 +75,26 @@ describe('parseSaveFile', () => {
     const result = parseSaveFile(JSON.stringify(older))
     expect(result.ok).toBe(true)
   })
+
+  it('rejects a save file whose owner.pet is a non-null non-object (e.g. corrupted to a string)', () => {
+    const bad = { ...buildSaveFile(), owner: { ...buildSaveFile().owner, pet: 'not-a-pet' } }
+    expect(parseSaveFile(JSON.stringify(bad))).toEqual({ ok: false, error: 'invalid' })
+  })
+
+  it('accepts a save file whose owner.pet is null (no pet yet)', () => {
+    const noPet = { ...buildSaveFile(), owner: { ...buildSaveFile().owner, pet: null } }
+    expect(parseSaveFile(JSON.stringify(noPet)).ok).toBe(true)
+  })
+
+  it('rejects a save file whose owner.petMemorials is not an array', () => {
+    const bad = { ...buildSaveFile(), owner: { ...buildSaveFile().owner, petMemorials: 'nope' } }
+    expect(parseSaveFile(JSON.stringify(bad))).toEqual({ ok: false, error: 'invalid' })
+  })
+
+  it('rejects a save file whose owner.consumablePurchases is not an object', () => {
+    const bad = { ...buildSaveFile(), owner: { ...buildSaveFile().owner, consumablePurchases: 'nope' } }
+    expect(parseSaveFile(JSON.stringify(bad))).toEqual({ ok: false, error: 'invalid' })
+  })
 })
 
 describe('getSaveFileSummary', () => {
@@ -91,29 +113,42 @@ describe('getSaveFileSummary', () => {
     const saveFile = buildSaveFile()
     expect(getSaveFileSummary(saveFile).petName).toBeNull()
   })
+
+  it('shows a placeholder name (not "no pet") when the pet exists but is unnamed', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba', name: '' })
+    const saveFile = buildSaveFile()
+
+    expect(getSaveFileSummary(saveFile).petName).toBe('（未命名）')
+  })
 })
 
 describe('applySaveFile', () => {
-  it('overwrites settings, owner state, and focus history from a full save file', () => {
+  it('overwrites settings, owner state, and focus history from a full save file', async () => {
     createPet({ speciesId: 'dog', breedId: 'shiba', name: '原本的寵物' })
     const backup = buildSaveFile()
 
     // 模擬「匯入前，瀏覽器裡已經有別的進度」
     saveSettings({ workMinutes: 1, shortBreakMinutes: 1, longBreakMinutes: 1 })
 
-    applySaveFile(backup)
+    vi.useRealTimers()
+    await applySaveFile(backup)
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow)
 
     expect(getSettings()).toEqual(backup.settings)
     expect(getOwnerState().pet.name).toBe('原本的寵物')
     expect(getFocusHistory()).toEqual(backup.focusHistory)
   })
 
-  it('restores an older save file (missing newer owner fields) without throwing, patched to defaults on next read', () => {
+  it('restores an older save file (missing newer owner fields) without throwing, patched to defaults on next read', async () => {
     const older = buildSaveFile()
     delete older.owner.ownerSkillTree
     delete older.owner.pomodoroStreak
 
-    applySaveFile(older)
+    vi.useRealTimers()
+    await applySaveFile(older)
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow)
 
     expect(() => getOwnerState()).not.toThrow()
     expect(getOwnerState().ownerSkillTree).toBeTruthy()

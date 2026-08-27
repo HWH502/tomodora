@@ -38,7 +38,8 @@ describe('captureNodeAsPngBlob', () => {
 })
 
 describe('downloadBlob', () => {
-  it('creates an object URL, clicks a download link, and revokes the URL', () => {
+  it('creates an object URL and clicks a download link immediately, but only revokes the URL after a delay', () => {
+    vi.useFakeTimers()
     const createObjectURL = vi.fn(() => 'blob:fake-url')
     const revokeObjectURL = vi.fn()
     vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
@@ -48,10 +49,16 @@ describe('downloadBlob', () => {
 
     expect(createObjectURL).toHaveBeenCalled()
     expect(clickSpy).toHaveBeenCalled()
+    // Not revoked synchronously: on Safari/older Firefox, click() only starts
+    // an async blob fetch, and an immediate revoke can produce a broken file.
+    expect(revokeObjectURL).not.toHaveBeenCalled()
+
+    vi.runAllTimers()
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:fake-url')
 
     clickSpy.mockRestore()
     vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 })
 

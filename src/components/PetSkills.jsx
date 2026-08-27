@@ -1,4 +1,3 @@
-import { useRef, useState } from 'react'
 import {
   COMMON_SKILLS,
   getSpeciesSkillPool,
@@ -6,6 +5,7 @@ import {
   PET_SKILL_DESCRIPTIONS,
 } from '../utils/petSkills'
 import { getPetSkillIconUrl } from '../utils/petSkillIcons'
+import { useEdgeAwareTooltip } from '../hooks/useEdgeAwareTooltip'
 
 export default function PetSkills({ pet }) {
   const unlockedIds = getUnlockedPetSkillIds(pet)
@@ -21,36 +21,9 @@ export default function PetSkills({ pet }) {
   )
 }
 
-// Some touch browsers replay a synthetic mouseenter after a tap for legacy
-// :hover compatibility. Without this guard that replay could immediately
-// reopen a tooltip a tap had just closed. Any real mouseenter within this
-// window of a touch tap is treated as that replay and ignored.
-const TOUCH_HOVER_SUPPRESS_MS = 500
-
 function SkillBadgeList({ skills, unlockedIds }) {
-  const [activeId, setActiveId] = useState(null)
-  const suppressHoverUntilRef = useRef(0)
-
-  const showTooltip = (skillId) => setActiveId(skillId)
-  const hideTooltip = (skillId) => setActiveId((current) => (current === skillId ? null : current))
-  const toggleTooltip = (skillId) => setActiveId((current) => (current === skillId ? null : skillId))
-
-  const handleMouseEnter = (skillId) => {
-    if (Date.now() < suppressHoverUntilRef.current) return
-    showTooltip(skillId)
-  }
-
-  // Mouse clicks and keyboard activation both fire onClick right after
-  // onMouseEnter/onFocus already opened the tooltip, so a plain onClick
-  // toggle would close it again in the same interaction. Touch taps are
-  // the only pointer type with no reliable hover/focus-before-click step,
-  // so only they should drive the toggle.
-  const handlePointerUp = (skillId, event) => {
-    if (event.pointerType === 'touch') {
-      suppressHoverUntilRef.current = Date.now() + TOUCH_HOVER_SUPPRESS_MS
-      toggleTooltip(skillId)
-    }
-  }
+  const { activeId, activeAlign, showTooltip, hideTooltip, handleMouseEnter, handlePointerUp } =
+    useEdgeAwareTooltip()
 
   return (
     <ul className="pet-skills__badge-grid">
@@ -71,9 +44,9 @@ function SkillBadgeList({ skills, unlockedIds }) {
               aria-label={skill.label}
               aria-describedby={isActive ? tooltipId : undefined}
               className={`pet-skills__badge${unlocked ? '' : ' pet-skills__badge--locked'}`}
-              onMouseEnter={() => handleMouseEnter(skill.id)}
+              onMouseEnter={(event) => handleMouseEnter(skill.id, event)}
               onMouseLeave={() => hideTooltip(skill.id)}
-              onFocus={() => showTooltip(skill.id)}
+              onFocus={(event) => showTooltip(skill.id, event.currentTarget)}
               onBlur={() => hideTooltip(skill.id)}
               onPointerUp={(event) => handlePointerUp(skill.id, event)}
             >
@@ -86,7 +59,11 @@ function SkillBadgeList({ skills, unlockedIds }) {
               )}
             </button>
             {isActive && (
-              <span id={tooltipId} role="tooltip" className="pet-skills__tooltip">
+              <span
+                id={tooltipId}
+                role="tooltip"
+                className={`pet-skills__tooltip pet-skills__tooltip--align-${activeAlign}`}
+              >
                 {tooltipText}
               </span>
             )}

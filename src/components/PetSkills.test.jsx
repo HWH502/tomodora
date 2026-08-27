@@ -184,6 +184,78 @@ describe('PetSkills', () => {
     expect(sitBadge.querySelector('.pet-skills__badge-icon--placeholder')).toBeInTheDocument()
   })
 
+  it('shifts the tooltip alignment away from center when the badge is near the right edge of the viewport', () => {
+    const originalInnerWidth = window.innerWidth
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+    try {
+      window.innerWidth = 360
+      HTMLElement.prototype.getBoundingClientRect = function () {
+        // Simulate a badge sitting flush against the right edge of a 360px-wide screen.
+        return { left: 330, right: 350, top: 100, bottom: 132, width: 32, height: 32 }
+      }
+
+      render(<PetSkills pet={makePet({ pomodorosSinceBorn: 10 })} />)
+      const badge = screen.getAllByTestId('pet-skill-badge')[0]
+      fireEvent.mouseEnter(badge)
+
+      const tooltip = screen.getByRole('tooltip')
+      expect(tooltip.className).toContain('pet-skills__tooltip--align-end')
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect
+      window.innerWidth = originalInnerWidth
+    }
+  })
+
+  it('shifts the tooltip alignment even when the badge itself is one column in from the edge, because the tooltip is wider than the badge', () => {
+    const originalInnerWidth = window.innerWidth
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+    try {
+      window.innerWidth = 360
+      HTMLElement.prototype.getBoundingClientRect = function () {
+        // This badge's own right edge (330) is comfortably clear of the 360px
+        // viewport edge, so badge-only edge detection would call this
+        // "center". But the tooltip is up to 180px wide and centers on the
+        // badge, so its right edge would still run past the viewport.
+        return { left: 298, right: 330, top: 100, bottom: 132, width: 32, height: 32 }
+      }
+
+      render(<PetSkills pet={makePet({ pomodorosSinceBorn: 10 })} />)
+      const badge = screen.getAllByTestId('pet-skill-badge')[0]
+      fireEvent.mouseEnter(badge)
+
+      const tooltip = screen.getByRole('tooltip')
+      expect(tooltip.className).toContain('pet-skills__tooltip--align-end')
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect
+      window.innerWidth = originalInnerWidth
+    }
+  })
+
+  it('keeps the tooltip centered when the badge sits well away from both viewport edges', () => {
+    const originalInnerWidth = window.innerWidth
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+    try {
+      window.innerWidth = 360
+      HTMLElement.prototype.getBoundingClientRect = function () {
+        // A badge in the middle of a 360px-wide screen: neither the
+        // badge-only nor the tooltip-width-aware math should flag an edge.
+        return { left: 150, right: 182, top: 100, bottom: 132, width: 32, height: 32 }
+      }
+
+      render(<PetSkills pet={makePet({ pomodorosSinceBorn: 10 })} />)
+      const badge = screen.getAllByTestId('pet-skill-badge')[0]
+      fireEvent.mouseEnter(badge)
+
+      const tooltip = screen.getByRole('tooltip')
+      expect(tooltip.className).not.toContain('pet-skills__tooltip--align-start')
+      expect(tooltip.className).not.toContain('pet-skills__tooltip--align-end')
+      expect(tooltip.className).toContain('pet-skills__tooltip--align-center')
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect
+      window.innerWidth = originalInnerWidth
+    }
+  })
+
   it('renders a realistic mixed-state pet: some skills unlocked in each group, some still locked', () => {
     // learning 0 → progress === pomodorosSinceBorn === 25
     // 狗技能門檻 8/20/35/50/75 → sit、potty 解鎖，selfEntertain/houseWatch/charm 未解鎖

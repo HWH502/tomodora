@@ -103,6 +103,18 @@ describe('PetStatus', () => {
     expect(screen.getByPlaceholderText('幫寵物取個名字')).toHaveValue('小白')
   })
 
+  it('renders the name-entry field before the stats list, so it is not below the fold', () => {
+    render(<ControlledPetStatus pet={{ name: '' }} />)
+
+    const container = screen.getByPlaceholderText('幫寵物取個名字').closest('section')
+    const children = Array.from(container.children)
+    const nameFieldIndex = children.findIndex((el) => el.classList.contains('pet-status__name-field'))
+    const statsListIndex = children.findIndex((el) => el.className === 'pet-status__stats')
+
+    expect(nameFieldIndex).toBeGreaterThan(-1)
+    expect(nameFieldIndex).toBeLessThan(statsListIndex)
+  })
+
   it('shows growth stage emoji/label matching the pet species', () => {
     render(
       <PetStatus
@@ -148,6 +160,19 @@ describe('PetStatus', () => {
     fireEvent.error(image)
     expect(screen.queryByRole('img', { name: /柴犬/ })).not.toBeInTheDocument()
     expect(screen.getByText('🐶')).toBeInTheDocument()
+  })
+
+  it('recovers the image once a new (valid) image URL comes in after an earlier failure, instead of staying stuck on the emoji', () => {
+    getPetImageUrl.mockReturnValue('/assets/dog-shiba-young.png')
+    const { rerender } = render(<ControlledPetStatus pet={{ pomodorosSinceBorn: 0 }} />)
+    fireEvent.error(screen.getByRole('img', { name: /柴犬/ }))
+    expect(screen.getByText('🐶')).toBeInTheDocument()
+
+    getPetImageUrl.mockReturnValue('/assets/dog-shiba-growing.png')
+    rerender(<ControlledPetStatus pet={{ pomodorosSinceBorn: 10 }} />)
+
+    const image = screen.getByRole('img', { name: /柴犬/ })
+    expect(image).toHaveAttribute('src', '/assets/dog-shiba-growing.png')
   })
 })
 
@@ -210,5 +235,11 @@ describe('PetStatus phase 3C additions', () => {
   it('renders the pet skills section', () => {
     render(<PetStatus pet={makePet()} money={0} skillPoints={0} onRenamePet={() => {}} onVisitVet={() => {}} />)
     expect(screen.getByRole('heading', { name: '寵物技能' })).toBeInTheDocument()
+  })
+
+  it('does not show the stale "not yet available" hint next to skill points', () => {
+    render(<ControlledPetStatus skillPoints={5} />)
+
+    expect(screen.queryByText('（尚未開放使用）')).not.toBeInTheDocument()
   })
 })

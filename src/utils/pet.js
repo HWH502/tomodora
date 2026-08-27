@@ -76,7 +76,8 @@ export function rollPetStats(breedId, personalityLabel) {
 
 export function getPetGrowthStage(pomodorosSinceBorn, speciesId) {
   const species = getSpeciesById(speciesId) ?? getSpeciesById('dog')
-  const def = GROWTH_STAGE_DEFS.find((candidate) => pomodorosSinceBorn >= candidate.minPomodoros)
+  const safePomodorosSinceBorn = Number.isFinite(pomodorosSinceBorn) ? Math.max(0, pomodorosSinceBorn) : 0
+  const def = GROWTH_STAGE_DEFS.find((candidate) => safePomodorosSinceBorn >= candidate.minPomodoros)
   const override = species.growthStageOverrides[def.stageKey]
   return { stageKey: def.stageKey, emoji: override.emoji, label: override.label ?? def.label }
 }

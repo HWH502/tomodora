@@ -22,7 +22,7 @@ import {
   upgradeSpecializationOwnerSkill,
   visitVet,
 } from './storage'
-import { getFocusHistory } from './focusHistory'
+import { getFocusHistory, __resetForTests } from './focusHistory'
 import { todayDateString } from './date'
 
 const PERSONALITY_POOL = ['黏人', '獨立', '愛玩', '穩重', '機靈', '溫柔']
@@ -37,6 +37,10 @@ function localDateString(date) {
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+
+beforeEach(async () => {
+  await __resetForTests()
+})
 
 describe('getSettings / saveSettings', () => {
   it('returns defaults when nothing is stored', () => {
@@ -165,7 +169,7 @@ describe('getOwnerState', () => {
         trainingTechnique: 0,
         socialTraining: 0,
         sizeSpecialization: { small: 0, medium: 0, large: 0 },
-        speciesSpecialization: { dog: 0, cat: 0, rodent: 0 },
+        speciesSpecialization: { dog: 0, cat: 0 },
         businessSense: 0,
         bargainHunter: 0,
         bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
@@ -507,7 +511,7 @@ describe('pomodoroStreak', () => {
         ownerSkillTree: {
           trainingTechnique: 0, socialTraining: 0,
           sizeSpecialization: { small: 0, medium: 0, large: 0 },
-          speciesSpecialization: { dog: 0, cat: 0, rodent: 0 },
+          speciesSpecialization: { dog: 0, cat: 0 },
           businessSense: 0, bargainHunter: 0,
           bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
           autoFeed: false, autoGrooming: false, instantGuard: 0, petInsurance: 0,
@@ -1041,7 +1045,7 @@ describe('getOwnerPetProgressCounts', () => {
 
     const counts = getOwnerPetProgressCounts()
     expect(counts.size).toEqual({ small: 1, medium: 1, large: 1 })
-    expect(counts.species).toEqual({ dog: 2, cat: 1, rodent: 0 })
+    expect(counts.species).toEqual({ dog: 2, cat: 1 })
   })
 })
 
@@ -1061,7 +1065,7 @@ describe('upgradeLinearOwnerSkill', () => {
 describe('upgradeSpecializationOwnerSkill', () => {
   it('returns null when the owner has not raised enough matching pets yet', () => {
     grantResources({ skillPoints: 30 })
-    expect(upgradeSpecializationOwnerSkill('species', 'rodent')).toBeNull() // 0 隻鼠、也沒有鼠類品種資料
+    expect(upgradeSpecializationOwnerSkill('species', 'cat')).toBeNull() // 還沒養過貓
   })
 
   it('succeeds once the owner has raised enough matching pets', () => {
@@ -1231,7 +1235,10 @@ describe('recordPomodoroReward — focus history trim notice', () => {
     expect(state._focusHistoryTrimmed).toBeUndefined()
   })
 
-  it('sets _focusHistoryTrimmed when the focus history write triggers a 90-day trim', () => {
+  it('sets _focusHistoryTrimmed when the focus history write triggers a 90-day trim', async () => {
+    vi.stubGlobal('indexedDB', undefined)
+    await __resetForTests()
+
     const seeded = { version: 1, days: {} }
     let cursor = new Date(2026, 0, 1)
     for (let i = 0; i < 91; i += 1) {
@@ -1242,6 +1249,7 @@ describe('recordPomodoroReward — focus history trim notice', () => {
       cursor.setDate(cursor.getDate() + 1)
     }
     localStorage.setItem('pomodoro.focusHistory', JSON.stringify(seeded))
+    await __resetForTests()
 
     const originalSetItem = Storage.prototype.setItem
     let focusHistoryCalls = 0
@@ -1255,10 +1263,13 @@ describe('recordPomodoroReward — focus history trim notice', () => {
       return originalSetItem.call(this, key, value)
     })
 
-    const state = recordPomodoroReward(25)
-
-    expect(state._focusHistoryTrimmed).toBe(true)
-    setItemSpy.mockRestore()
+    try {
+      const state = recordPomodoroReward(25)
+      expect(state._focusHistoryTrimmed).toBe(true)
+    } finally {
+      setItemSpy.mockRestore()
+      vi.unstubAllGlobals()
+    }
   })
 })
 
@@ -1311,7 +1322,7 @@ describe('lifetimeFocusMinutes', () => {
         ownerSkillTree: {
           trainingTechnique: 0, socialTraining: 0,
           sizeSpecialization: { small: 0, medium: 0, large: 0 },
-          speciesSpecialization: { dog: 0, cat: 0, rodent: 0 },
+          speciesSpecialization: { dog: 0, cat: 0 },
           businessSense: 0, bargainHunter: 0,
           bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
           autoFeed: false, autoGrooming: false, instantGuard: 0, petInsurance: 0,
@@ -1351,6 +1362,106 @@ describe('lifetimeFocusMinutes', () => {
   })
 })
 
+describe('money / skillPoints / lifetimePomodoros backfill', () => {
+  it('repairs a stored owner state missing money/skillPoints/lifetimePomodoros back to 0 instead of leaving them undefined', () => {
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({
+        pet: null,
+        petMemorials: [],
+        ownedCollectibles: [],
+        consumablePurchases: {},
+        ownerSkillTree: {
+          trainingTechnique: 0, socialTraining: 0,
+          sizeSpecialization: { small: 0, medium: 0, large: 0 },
+          speciesSpecialization: { dog: 0, cat: 0 },
+          businessSense: 0, bargainHunter: 0,
+          bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
+          autoFeed: false, autoGrooming: false, instantGuard: 0, petInsurance: 0,
+        },
+        pomodoroStreak: { currentStreak: 0, lastCompletedDate: null, milestonesReached: [] },
+      }),
+    )
+    const state = getOwnerState()
+    expect(state.money).toBe(0)
+    expect(state.skillPoints).toBe(0)
+    expect(state.lifetimePomodoros).toBe(0)
+  })
+
+  it('repairs money/skillPoints/lifetimePomodoros that were corrupted into non-numbers (e.g. a bad import)', () => {
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({
+        ...getOwnerState(),
+        money: null,
+        skillPoints: 'oops',
+        lifetimePomodoros: undefined,
+      }),
+    )
+    const state = getOwnerState()
+    expect(state.money).toBe(0)
+    expect(state.skillPoints).toBe(0)
+    expect(state.lifetimePomodoros).toBe(0)
+  })
+
+  it('does not clobber legitimate existing values', () => {
+    localStorage.setItem(OWNER_KEY, JSON.stringify({ ...getOwnerState(), money: 40, skillPoints: 6, lifetimePomodoros: 9 }))
+    const state = getOwnerState()
+    expect(state.money).toBe(40)
+    expect(state.skillPoints).toBe(6)
+    expect(state.lifetimePomodoros).toBe(9)
+  })
+
+  it('recordPomodoroReward no longer poisons money/skillPoints into NaN after a repaired save', () => {
+    localStorage.setItem(
+      OWNER_KEY,
+      JSON.stringify({
+        pet: null,
+        petMemorials: [],
+        ownedCollectibles: [],
+        consumablePurchases: {},
+        ownerSkillTree: {
+          trainingTechnique: 0, socialTraining: 0,
+          sizeSpecialization: { small: 0, medium: 0, large: 0 },
+          speciesSpecialization: { dog: 0, cat: 0 },
+          businessSense: 0, bargainHunter: 0,
+          bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
+          autoFeed: false, autoGrooming: false, instantGuard: 0, petInsurance: 0,
+        },
+        pomodoroStreak: { currentStreak: 0, lastCompletedDate: null, milestonesReached: [] },
+      }),
+    )
+    const state = recordPomodoroReward(25)
+    expect(Number.isFinite(state.money)).toBe(true)
+    expect(Number.isFinite(state.skillPoints)).toBe(true)
+    expect(Number.isFinite(state.lifetimePomodoros)).toBe(true)
+  })
+})
+
+describe('storage writes surviving a localStorage failure', () => {
+  it('recordPomodoroReward still returns the updated in-memory state instead of throwing when localStorage.setItem fails (e.g. quota exceeded)', () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError')
+    })
+
+    let state
+    expect(() => { state = recordPomodoroReward(25) }).not.toThrow()
+    expect(state.lifetimeFocusMinutes).toBe(25)
+
+    setItemSpy.mockRestore()
+  })
+
+  it('saveSettings does not throw when localStorage.setItem fails', () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError')
+    })
+
+    expect(() => saveSettings({ workMinutes: 40, shortBreakMinutes: 5, longBreakMinutes: 15 })).not.toThrow()
+
+    setItemSpy.mockRestore()
+  })
+})
+
 describe('lifetimeFocusMinutesStartedAt', () => {
   it('defaults to today for a fresh owner state', () => {
     const fixedNow = new Date(2026, 7, 25, 10, 0, 0)
@@ -1379,7 +1490,7 @@ describe('lifetimeFocusMinutesStartedAt', () => {
         ownerSkillTree: {
           trainingTechnique: 0, socialTraining: 0,
           sizeSpecialization: { small: 0, medium: 0, large: 0 },
-          speciesSpecialization: { dog: 0, cat: 0, rodent: 0 },
+          speciesSpecialization: { dog: 0, cat: 0 },
           businessSense: 0, bargainHunter: 0,
           bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
           autoFeed: false, autoGrooming: false, instantGuard: 0, petInsurance: 0,

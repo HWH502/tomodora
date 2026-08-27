@@ -21,6 +21,8 @@ import {
   LEVEL_COSTS,
   REQUIRED_PET_COUNTS,
   SINGLE_UNLOCK_COST,
+  SKILL_TRACK_CATALOG,
+  SKILL_TRACK_DESCRIPTIONS,
   unlockSingle,
   upgradeLinearTrack,
   upgradeSpecialization,
@@ -41,7 +43,7 @@ describe('defaultOwnerSkillTree', () => {
     expect(tree.trainingTechnique).toBe(0)
     expect(tree.socialTraining).toBe(0)
     expect(tree.sizeSpecialization).toEqual({ small: 0, medium: 0, large: 0 })
-    expect(tree.speciesSpecialization).toEqual({ dog: 0, cat: 0, rodent: 0 })
+    expect(tree.speciesSpecialization).toEqual({ dog: 0, cat: 0 })
     expect(tree.autoFeed).toBe(false)
     expect(tree.autoGrooming).toBe(false)
     expect(tree.instantGuard).toBe(0)
@@ -99,12 +101,12 @@ describe('specialization upgrades gated by owned-pet count', () => {
   it('upgrades only the targeted tag', () => {
     const tree = defaultOwnerSkillTree()
     const next = upgradeSpecialization(tree, 'species', 'dog')
-    expect(next.speciesSpecialization).toEqual({ dog: 1, cat: 0, rodent: 0 })
+    expect(next.speciesSpecialization).toEqual({ dog: 1, cat: 0 })
   })
 
-  it('flags rodent as unavailable because no rodent breed data exists yet', () => {
+  it('flags an unknown species tag as unavailable', () => {
     expect(isSpeciesTagAvailable('dog')).toBe(true)
-    expect(isSpeciesTagAvailable('rodent')).toBe(false)
+    expect(isSpeciesTagAvailable('unknown')).toBe(false)
   })
 })
 
@@ -171,8 +173,36 @@ describe('economy bonuses', () => {
 
 describe('species specialization affection bonus', () => {
   it('reads the level for the pet\'s own species, not other species', () => {
-    const tree = { ...defaultOwnerSkillTree(), speciesSpecialization: { dog: 2, cat: 0, rodent: 0 } }
+    const tree = { ...defaultOwnerSkillTree(), speciesSpecialization: { dog: 2, cat: 0 } }
     expect(getSpeciesAffectionBonus({ speciesId: 'dog' }, tree)).toBe(2)
     expect(getSpeciesAffectionBonus({ speciesId: 'cat' }, tree)).toBe(0)
+  })
+})
+
+describe('SKILL_TRACK_DESCRIPTIONS', () => {
+  it('has a plain-language benefit description for every track in the catalog', () => {
+    SKILL_TRACK_CATALOG.forEach((track) => {
+      expect(SKILL_TRACK_DESCRIPTIONS[track.id]).toBeTruthy()
+    })
+  })
+
+  it('has no orphan description for a track id that no longer exists in the catalog', () => {
+    const catalogIds = new Set(SKILL_TRACK_CATALOG.map((track) => track.id))
+    Object.keys(SKILL_TRACK_DESCRIPTIONS).forEach((id) => {
+      expect(catalogIds.has(id)).toBe(true)
+    })
+  })
+
+  it('does not describe internal mechanics (no level numbers or bonus amounts)', () => {
+    Object.values(SKILL_TRACK_DESCRIPTIONS).forEach((description) => {
+      expect(description).not.toMatch(/[0-9]/)
+    })
+  })
+
+  it('mentions the pet-condition limitation for specialization tracks', () => {
+    const specializationTracks = SKILL_TRACK_CATALOG.filter((track) => track.type === 'specialization')
+    specializationTracks.forEach((track) => {
+      expect(SKILL_TRACK_DESCRIPTIONS[track.id]).toContain('只')
+    })
   })
 })

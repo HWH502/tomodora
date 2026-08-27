@@ -101,9 +101,12 @@ body {
   }
 
   .app__left,
-  .app__right {
+  .app__right,
+  .app__skill {
     width: 100%;
+    min-width: 0;
   }
+
 }
 
 h1 {
@@ -365,13 +368,6 @@ img.pet-status__avatar {
   gap: 16px;
   font-size: 15px;
   margin-top: 8px;
-}
-
-.pet-status__hint {
-  font-size: 11px;
-  opacity: 0.6;
-  font-style: normal;
-  display: block;
 }
 
 .pet-needs {
@@ -721,6 +717,45 @@ img.pet-status__avatar {
   flex: 1;
 }
 
+.skill-tree__item-label-text-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.skill-tree__item-label-text {
+  cursor: help;
+  border-bottom: 1px dotted var(--border);
+}
+
+.skill-tree__tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #1f1f1f;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+}
+
+.skill-tree__tooltip--align-start {
+  left: 0;
+  transform: none;
+}
+
+.skill-tree__tooltip--align-end {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
 .skill-tree__item-level {
   opacity: 0.6;
   font-size: 0.85rem;
@@ -821,6 +856,17 @@ img.pet-status__avatar {
   line-height: 1.4;
   text-align: center;
   pointer-events: none;
+}
+
+.pet-skills__tooltip--align-start {
+  left: 0;
+  transform: none;
+}
+
+.pet-skills__tooltip--align-end {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 .dev-panel {
@@ -951,14 +997,14 @@ img.pet-status__avatar {
   font-weight: 700;
 }
 
-.focus-heatmap__year-nav {
+.focus-stats-page__year-nav {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
-.focus-heatmap__year-label {
+.focus-stats-page__year-label {
   font-weight: 700;
   min-width: 4ch;
   text-align: center;
@@ -1175,6 +1221,26 @@ img.pet-status__avatar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+@media (max-width: 600px) {
+  .focus-stats-page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .focus-summary {
+    gap: 0.5rem;
+  }
+
+  .focus-summary__card {
+    flex: 1 1 45%;
+  }
+
+  .focus-trend__bars {
+    height: 110px;
+  }
 }
 
 .focus-stats-toggle {

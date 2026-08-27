@@ -2,6 +2,12 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import PetCreation from './PetCreation'
+import * as petUtils from '../utils/pet'
+
+vi.mock('../utils/pet', async () => {
+  const actual = await vi.importActual('../utils/pet')
+  return { ...actual, rollPersonality: vi.fn(actual.rollPersonality) }
+})
 
 // Mirrors src/utils/pet.js's private tables for the 'shiba' breed used in the reroll test below.
 // Kept here rather than exported from pet.js so production code stays untouched.
@@ -99,26 +105,26 @@ describe('PetCreation', () => {
     expect(stats.learning + stats.obedience + stats.friendliness + stats.energy).toBe(100)
   })
 
-  it('rerolling changes the stats but keeps species/breed/personality fixed, up to 3 times', async () => {
+  it('rerolling changes the stats (and possibly personality) but keeps species/breed fixed, up to 3 times', async () => {
     const user = userEvent.setup()
     render(<PetCreation onCreatePet={vi.fn()} />)
 
     await user.click(screen.getByText('狗'))
     await user.click(screen.getByText('柴犬'))
 
-    const infoBefore = screen.getByText(/柴犬 ·/).textContent
-    const personalityLabel = infoBefore.split(' · ')[1]
-    const rerollButton = () => screen.getByRole('button', { name: /重骰能力值/ })
+    const breedBefore = screen.getByText(/柴犬 ·/).textContent.split(' · ')[0]
+    const rerollButton = () => screen.getByRole('button', { name: /重骰/ })
 
     const statsSeen = [readPreviewStats()]
-    assertStatsWithinBounds(statsSeen[0], personalityLabel)
+    assertStatsWithinBounds(statsSeen[0], screen.getByText(/柴犬 ·/).textContent.split(' · ')[1])
 
     for (let i = 0; i < 3; i += 1) {
       // eslint-disable-next-line no-await-in-loop
       await user.click(rerollButton())
-      expect(screen.getByText(/柴犬 ·/).textContent).toBe(infoBefore)
+      const infoAfter = screen.getByText(/柴犬 ·/).textContent
+      expect(infoAfter.split(' · ')[0]).toBe(breedBefore)
       const stats = readPreviewStats()
-      assertStatsWithinBounds(stats, personalityLabel)
+      assertStatsWithinBounds(stats, infoAfter.split(' · ')[1])
       statsSeen.push(stats)
     }
 
@@ -126,6 +132,25 @@ describe('PetCreation', () => {
     // At least one reroll should have produced a different stat spread than the initial roll.
     const allIdentical = statsSeen.every((stats) => JSON.stringify(stats) === JSON.stringify(statsSeen[0]))
     expect(allIdentical).toBe(false)
+  })
+
+  it('rerolling also rerolls the personality, not just the stats', async () => {
+    petUtils.rollPersonality
+      .mockReturnValueOnce('穩重') // initial breed selection
+      .mockReturnValueOnce('黏人') // reroll #1: a different personality
+
+    const user = userEvent.setup()
+    render(<PetCreation onCreatePet={vi.fn()} />)
+
+    await user.click(screen.getByText('狗'))
+    await user.click(screen.getByText('柴犬'))
+    expect(screen.getByText(/柴犬 ·/).textContent).toBe('柴犬 · 穩重')
+
+    await user.click(screen.getByRole('button', { name: /重骰/ }))
+    expect(screen.getByText(/柴犬 ·/).textContent).toBe('柴犬 · 黏人')
+
+    // Stats must match the new personality's modifier table, proving reroll used the new roll, not the stale one.
+    assertStatsWithinBounds(readPreviewStats(), '黏人')
   })
 
   it('going back to the species/breed picker resets the preview', async () => {

@@ -58,15 +58,15 @@ describe('buildHeatmapYear', () => {
     expect(new Set(inYearDates).size).toBe(365)
   })
 
-  it('computes color level relative to the all-time max minutes across the whole history, not just the year', () => {
+  it('computes color level relative to the max minutes within the displayed year, ignoring other years', () => {
     const history = {
       version: 1,
       days: {
-        '2025-01-01': { count: 1, minutes: 100, growthMilestoneStageKey: null }, // sets the all-time max, outside 2026
-        '2026-03-01': { count: 1, minutes: 25, growthMilestoneStageKey: null }, // 25% of max -> level 1
-        '2026-03-02': { count: 1, minutes: 50, growthMilestoneStageKey: null }, // 50% of max -> level 2
-        '2026-03-03': { count: 1, minutes: 75, growthMilestoneStageKey: null }, // 75% of max -> level 3
-        '2026-03-04': { count: 1, minutes: 100, growthMilestoneStageKey: null }, // 100% of max -> level 4
+        '2025-01-01': { count: 1, minutes: 400, growthMilestoneStageKey: null }, // an old outlier, outside 2026 - must not flatten 2026's scale
+        '2026-03-01': { count: 1, minutes: 25, growthMilestoneStageKey: null }, // 25% of 2026's max -> level 1
+        '2026-03-02': { count: 1, minutes: 50, growthMilestoneStageKey: null }, // 50% of 2026's max -> level 2
+        '2026-03-03': { count: 1, minutes: 75, growthMilestoneStageKey: null }, // 75% of 2026's max -> level 3
+        '2026-03-04': { count: 1, minutes: 100, growthMilestoneStageKey: null }, // 100% of 2026's max -> level 4
       },
     }
     const { weeks, maxMinutes } = buildHeatmapYear({ year: 2026, history, currentPet: null, petMemorials: [] })
@@ -77,6 +77,18 @@ describe('buildHeatmapYear', () => {
     expect(byDate['2026-03-03'].colorLevel).toBe(3)
     expect(byDate['2026-03-04'].colorLevel).toBe(4)
     expect(byDate['2026-03-05'].colorLevel).toBe(0) // no entry -> level 0
+  })
+
+  it('scopes maxMinutes to the requested year even when another year has more data', () => {
+    const history = {
+      version: 1,
+      days: {
+        '2025-06-01': { count: 1, minutes: 400, growthMilestoneStageKey: null },
+        '2025-06-02': { count: 1, minutes: 300, growthMilestoneStageKey: null },
+      },
+    }
+    const { maxMinutes } = buildHeatmapYear({ year: 2026, history, currentPet: null, petMemorials: [] })
+    expect(maxMinutes).toBe(0)
   })
 
   it('carries the growth milestone stage key from the day entry', () => {

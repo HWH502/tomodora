@@ -55,6 +55,20 @@ describe('getPetGrowthStage — unknown species', () => {
   })
 })
 
+describe('getPetGrowthStage — corrupted pomodorosSinceBorn', () => {
+  it('falls back to the youngest stage instead of throwing when negative', () => {
+    expect(getPetGrowthStage(-5, 'dog')).toEqual(getPetGrowthStage(0, 'dog'))
+  })
+
+  it('falls back to the youngest stage instead of throwing when NaN', () => {
+    expect(getPetGrowthStage(NaN, 'dog')).toEqual(getPetGrowthStage(0, 'dog'))
+  })
+
+  it('falls back to the youngest stage instead of throwing when undefined', () => {
+    expect(getPetGrowthStage(undefined, 'cat')).toEqual(getPetGrowthStage(0, 'cat'))
+  })
+})
+
 describe('rollPersonality / rollRandomName', () => {
   afterEach(() => {
     vi.restoreAllMocks()

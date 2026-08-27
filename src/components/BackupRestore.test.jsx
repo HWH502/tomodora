@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import BackupRestore from './BackupRestore'
 import { buildSaveFile, CURRENT_SCHEMA_VERSION, serializeSaveFile } from '../utils/saveFile'
@@ -85,6 +85,21 @@ describe('BackupRestore - 匯入', () => {
     ).toBeInTheDocument()
   })
 
+  it('rejects an oversized file before reading it, instead of parsing a huge string', async () => {
+    const oversized = buildFile('x'.repeat(6 * 1024 * 1024))
+    const readAsTextSpy = vi.spyOn(FileReader.prototype, 'readAsText')
+
+    render(<BackupRestore />)
+    const input = document.querySelector('.backup-restore__file-input')
+    fireEvent.change(input, { target: { files: [oversized] } })
+
+    expect(await screen.findByText('這個檔案太大了，不像是番茄鐘的存檔，請確認選對檔案。')).toBeInTheDocument()
+    expect(screen.queryByText('確定覆蓋並匯入')).not.toBeInTheDocument()
+    expect(readAsTextSpy).not.toHaveBeenCalled()
+
+    readAsTextSpy.mockRestore()
+  })
+
   it('applies the save file and reloads the page after confirming', async () => {
     createPet({ speciesId: 'dog', breedId: 'shiba', name: '小福' })
     const validText = serializeSaveFile(buildSaveFile())
@@ -95,7 +110,7 @@ describe('BackupRestore - 匯入', () => {
     fireEvent.change(input, { target: { files: [buildFile(validText)] } })
     fireEvent.click(await screen.findByText('確定覆蓋並匯入'))
 
-    expect(reloadPage).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(reloadPage).toHaveBeenCalledTimes(1))
   })
 
   it('falls back to 未知時間 when the exported date cannot be parsed', async () => {

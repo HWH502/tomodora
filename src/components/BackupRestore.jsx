@@ -5,7 +5,10 @@ import { todayDateString } from '../utils/date'
 const ERROR_MESSAGES = {
   invalid: '這不是有效的番茄鐘存檔檔案，請確認選對檔案。',
   tooNew: '這份存檔的版本比目前的遊戲新，請重新整理頁面更新到最新版本後再試一次。',
+  tooLarge: '這個檔案太大了，不像是番茄鐘的存檔，請確認選對檔案。',
 }
+
+const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024
 
 export default function BackupRestore({ reloadPage = () => window.location.reload() } = {}) {
   const fileInputRef = useRef(null)
@@ -28,6 +31,12 @@ export default function BackupRestore({ reloadPage = () => window.location.reloa
     event.target.value = ''
     if (!file) return
 
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      setImportError(ERROR_MESSAGES.tooLarge)
+      setPendingImport(null)
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = () => {
       const result = parseSaveFile(String(reader.result))
@@ -46,8 +55,8 @@ export default function BackupRestore({ reloadPage = () => window.location.reloa
     reader.readAsText(file)
   }
 
-  const handleConfirmImport = () => {
-    applySaveFile(pendingImport)
+  const handleConfirmImport = async () => {
+    await applySaveFile(pendingImport)
     reloadPage()
   }
 

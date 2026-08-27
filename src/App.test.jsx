@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { __resetForTests } from './utils/focusHistory'
 
 const fixedNow = new Date(2026, 2, 15, 10, 0, 0)
 
@@ -126,7 +127,10 @@ describe('App', () => {
     expect(screen.getByText('今天已完成', { exact: false })).toBeInTheDocument()
   })
 
-  it('shows a trim notice banner after a pomodoro completion trims old focus history, and can dismiss it', () => {
+  it('shows a trim notice banner after a pomodoro completion trims old focus history, and can dismiss it', async () => {
+    vi.stubGlobal('indexedDB', undefined)
+    await __resetForTests()
+
     const seeded = { version: 1, days: {} }
     let cursor = new Date(2026, 0, 1)
     for (let i = 0; i < 91; i += 1) {
@@ -137,6 +141,7 @@ describe('App', () => {
       cursor.setDate(cursor.getDate() + 1)
     }
     localStorage.setItem('pomodoro.focusHistory', JSON.stringify(seeded))
+    await __resetForTests()
 
     const originalSetItem = Storage.prototype.setItem
     let focusHistoryCalls = 0
@@ -150,17 +155,20 @@ describe('App', () => {
       return originalSetItem.call(this, key, value)
     })
 
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: '開始' }))
-    act(() => {
-      vi.advanceTimersByTime(25 * 60 * 1000)
-    })
+    try {
+      render(<App />)
+      fireEvent.click(screen.getByRole('button', { name: '開始' }))
+      act(() => {
+        vi.advanceTimersByTime(25 * 60 * 1000)
+      })
 
-    expect(screen.getByText('儲存空間不足', { exact: false })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: '知道了' }))
-    expect(screen.queryByText('儲存空間不足', { exact: false })).not.toBeInTheDocument()
-
-    setItemSpy.mockRestore()
+      expect(screen.getByText('儲存空間有點緊', { exact: false })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '知道了' }))
+      expect(screen.queryByText('儲存空間有點緊', { exact: false })).not.toBeInTheDocument()
+    } finally {
+      setItemSpy.mockRestore()
+      vi.unstubAllGlobals()
+    }
   })
 })
 

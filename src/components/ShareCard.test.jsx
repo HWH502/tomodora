@@ -1,6 +1,11 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import ShareCard from './ShareCard'
+import { getPetImageUrl } from '../utils/petImages'
+
+vi.mock('../utils/petImages', () => ({
+  getPetImageUrl: vi.fn(),
+}))
 
 describe('ShareCard', () => {
   it('renders the noPet variant with only pomodoro stats', () => {
@@ -77,5 +82,30 @@ describe('ShareCard', () => {
     expect(screen.getByText('小雪')).toBeInTheDocument()
     expect(screen.getByText(/陪你度過 87 天/)).toBeInTheDocument()
     expect(document.querySelector('.share-card--memorial')).toBeInTheDocument()
+  })
+
+  it('recovers the pet figure image once a new (valid) URL comes in after an earlier load failure', () => {
+    const petData = {
+      name: '豆豆', breedLabel: '柴犬', stageLabel: '幼犬階段', emoji: '🐶',
+      speciesId: 'dog', breedId: 'shiba', stageKey: 'young',
+      generation: 1, legacyLine: null,
+    }
+    const data = {
+      variant: 'hasPet',
+      stats: { lifetimePomodoros: 5, focusMinutesLabel: '2 小時 5 分', startedAtLabel: '2026/08/25' },
+      pet: petData,
+      memorial: null,
+    }
+
+    getPetImageUrl.mockReturnValue('/assets/dog-shiba-young.png')
+    const { rerender } = render(<ShareCard data={data} />)
+    fireEvent.error(screen.getByRole('img', { name: '豆豆' }))
+    expect(screen.getByText('🐶')).toBeInTheDocument()
+
+    getPetImageUrl.mockReturnValue('/assets/dog-shiba-growing.png')
+    rerender(<ShareCard data={{ ...data, pet: { ...petData, stageKey: 'growing' } }} />)
+
+    const image = screen.getByRole('img', { name: '豆豆' })
+    expect(image).toHaveAttribute('src', '/assets/dog-shiba-growing.png')
   })
 })

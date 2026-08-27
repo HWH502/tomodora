@@ -21,9 +21,11 @@ export default function PetCreation({ onCreatePet }) {
   }
 
   const reroll = () => {
+    const personalityLabel = rollPersonality()
     setPreview((current) => ({
       ...current,
-      stats: rollPetStats(current.breedId, current.personalityLabel),
+      personalityLabel,
+      stats: rollPetStats(current.breedId, personalityLabel),
       rerollsUsed: current.rerollsUsed + 1,
     }))
   }
@@ -55,7 +57,7 @@ export default function PetCreation({ onCreatePet }) {
         </ul>
         <div className="pet-creation__preview-actions">
           <button type="button" onClick={reroll} disabled={rerollsLeft <= 0}>
-            重骰能力值{rerollsLeft > 0 ? `（剩 ${rerollsLeft} 次）` : '（已達上限）'}
+            重骰{rerollsLeft > 0 ? `（剩 ${rerollsLeft} 次）` : '（已達上限）'}
           </button>
           <button type="button" onClick={confirm}>
             就是這隻！

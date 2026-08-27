@@ -18,8 +18,11 @@ function sundayOnOrAfter(date) {
   return result
 }
 
-function allTimeMaxMinutes(history) {
-  const values = Object.values(history.days).map((entry) => entry.minutes)
+function maxMinutesInYear(history, year) {
+  const prefix = `${year}-`
+  const values = Object.entries(history.days)
+    .filter(([dateString]) => dateString.startsWith(prefix))
+    .map(([, entry]) => entry.minutes)
   return values.length > 0 ? Math.max(...values) : 0
 }
 
@@ -49,7 +52,7 @@ export function buildHeatmapYear({ year, history, currentPet, petMemorials }) {
   const dec31 = new Date(year, 11, 31)
   const gridStart = mondayOnOrBefore(jan1)
   const gridEnd = sundayOnOrAfter(dec31)
-  const maxMinutes = allTimeMaxMinutes(history)
+  const maxMinutes = maxMinutesInYear(history, year)
 
   const cells = []
   const cursor = new Date(gridStart)

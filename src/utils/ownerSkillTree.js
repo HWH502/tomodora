@@ -8,7 +8,7 @@ export function defaultOwnerSkillTree() {
     trainingTechnique: 0,
     socialTraining: 0,
     sizeSpecialization: { small: 0, medium: 0, large: 0 },
-    speciesSpecialization: { dog: 0, cat: 0, rodent: 0 },
+    speciesSpecialization: { dog: 0, cat: 0 },
     businessSense: 0,
     bargainHunter: 0,
     bonding: { affection: 0, kibble: 0, supplement: 0, grooming: 0 },
@@ -81,7 +81,7 @@ export const REQUIRED_PET_COUNTS = [1, 3, 5]
 
 export const SPECIALIZATION_CATEGORIES = {
   size: { path: 'sizeSpecialization', tags: ['small', 'medium', 'large'] },
-  species: { path: 'speciesSpecialization', tags: ['dog', 'cat', 'rodent'] },
+  species: { path: 'speciesSpecialization', tags: ['dog', 'cat'] },
 }
 
 export const SKILL_TRACK_CATALOG = [
@@ -92,7 +92,6 @@ export const SKILL_TRACK_CATALOG = [
   { id: 'sizeSpecialization.large', label: '體型專精（大型）', branch: 'nurture', type: 'specialization', category: 'size', tag: 'large' },
   { id: 'speciesSpecialization.dog', label: '物種專精（犬類）', branch: 'nurture', type: 'specialization', category: 'species', tag: 'dog' },
   { id: 'speciesSpecialization.cat', label: '物種專精（貓類）', branch: 'nurture', type: 'specialization', category: 'species', tag: 'cat' },
-  { id: 'speciesSpecialization.rodent', label: '物種專精（鼠類）', branch: 'nurture', type: 'specialization', category: 'species', tag: 'rodent' },
   { id: 'businessSense', label: '番茄生意經', branch: 'business', type: 'linear' },
   { id: 'bargainHunter', label: '比價達人', branch: 'business', type: 'linear' },
   { id: 'bonding.affection', label: '知心相伴', branch: 'bonding', type: 'linear' },
@@ -104,6 +103,26 @@ export const SKILL_TRACK_CATALOG = [
   { id: 'instantGuard', label: '即時守護', branch: 'standalone', type: 'linear' },
   { id: 'petInsurance', label: '寵物保險', branch: 'standalone', type: 'linear' },
 ]
+
+export const SKILL_TRACK_DESCRIPTIONS = {
+  trainingTechnique: '讓寵物惹麻煩的機率再降低一點',
+  socialTraining: '完成番茄鐘時，好感度會多漲一點',
+  'sizeSpecialization.small': '讓寵物的飽食度掉得比較慢，飽食度或潔淨度太低時健康度扣得也比較少（只對小型犬貓生效）',
+  'sizeSpecialization.medium': '讓寵物的飽食度掉得比較慢，飽食度或潔淨度太低時健康度扣得也比較少（只對中型犬貓生效）',
+  'sizeSpecialization.large': '讓寵物的飽食度掉得比較慢，飽食度或潔淨度太低時健康度扣得也比較少（只對大型犬貓生效）',
+  'speciesSpecialization.dog': '讓寵物的潔淨度掉得比較慢，每天第八次完成番茄鐘時好感度也加得更多（只對狗生效）',
+  'speciesSpecialization.cat': '讓寵物的潔淨度掉得比較慢，每天第八次完成番茄鐘時好感度也加得更多（只對貓生效）',
+  businessSense: '完成番茄鐘時，多賺一點錢',
+  bargainHunter: '商店東西買起來會打折',
+  'bonding.affection': '好感度成長得更快',
+  'bonding.kibble': '飼料補飽食度的效果更好',
+  'bonding.supplement': '營養品補健康度的效果更好',
+  'bonding.grooming': '盥洗用品補潔淨度的效果更好',
+  autoFeed: '每天結算時，如果飽食度太低，系統會自動幫你買飼料補上去（錢不夠的話就不會買），不用自己記得手動購買',
+  autoGrooming: '每天結算時，如果潔淨度太低，系統會自動幫你買盥洗用品補上去（錢不夠的話就不會買），不用自己記得手動購買',
+  instantGuard: '寵物遇到意外或惹麻煩時，健康度的損失會減少',
+  petInsurance: '看醫生、走失、惹麻煩這些要花錢的意外，花費會打折',
+}
 
 function getPath(obj, path) {
   return path.split('.').reduce((value, key) => value[key], obj)

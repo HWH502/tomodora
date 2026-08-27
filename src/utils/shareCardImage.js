@@ -18,7 +18,10 @@ export function downloadBlob(blob, filename) {
   link.href = url
   link.download = filename
   link.click()
-  URL.revokeObjectURL(url)
+  // click() only starts the download; on Safari and some Firefox versions the
+  // actual blob fetch happens asynchronously, so revoking immediately can
+  // truncate or empty the downloaded file.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export function canShareFiles(file) {

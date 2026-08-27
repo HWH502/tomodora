@@ -40,6 +40,17 @@ export function parseSaveFile(text) {
     return { ok: false, error: 'invalid' }
   }
 
+  const { pet, petMemorials, ownedCollectibles, consumablePurchases } = parsed.owner
+  const isValidOwnerShape =
+    (pet === null || pet === undefined || typeof pet === 'object') &&
+    (petMemorials === undefined || Array.isArray(petMemorials)) &&
+    (ownedCollectibles === undefined || Array.isArray(ownedCollectibles)) &&
+    (consumablePurchases === undefined || (consumablePurchases && typeof consumablePurchases === 'object'))
+
+  if (!isValidOwnerShape) {
+    return { ok: false, error: 'invalid' }
+  }
+
   if (parsed.schemaVersion > CURRENT_SCHEMA_VERSION) {
     return { ok: false, error: 'tooNew' }
   }
@@ -50,14 +61,14 @@ export function parseSaveFile(text) {
 export function getSaveFileSummary(data) {
   return {
     exportedAt: data.exportedAt ?? null,
-    petName: data.owner?.pet?.name || null,
+    petName: data.owner?.pet ? (data.owner.pet.name || '（未命名）') : null,
     money: Number.isFinite(data.owner?.money) ? data.owner.money : 0,
   }
 }
 
-export function applySaveFile(data) {
+export async function applySaveFile(data) {
   saveSettings(data.settings)
   debugSetTodayCount(data.todayCount.date, data.todayCount.count)
   restoreOwnerState(data.owner)
-  restoreFocusHistory(data.focusHistory)
+  await restoreFocusHistory(data.focusHistory)
 }

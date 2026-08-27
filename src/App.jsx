@@ -80,7 +80,7 @@ function App() {
         <>
           {focusHistoryTrimmed && (
             <p className="app__auto-purchase-toast" role="status">
-              專注紀錄的儲存空間不足，已經自動清掉 90 天以前的舊資料，最近的紀錄都還在。
+              儲存空間有點緊，剛剛清掉了一小段還沒同步進正式儲存空間的暫存紀錄，你完整的歷史紀錄都還在，不受影響。
               <button type="button" onClick={clearFocusHistoryTrimmed}>
                 知道了
               </button>
