@@ -4,6 +4,7 @@ import {
   LEGACY_HEAD_START_CAP,
   SUGGESTED_PET_NAMES,
   calculateLegacyHeadStart,
+  getGrowthStageDefByLabel,
   getPetGrowthStage,
   rollPersonality,
   rollPetStats,
@@ -150,5 +151,25 @@ describe('rollPetStats', () => {
     expect(() => rollPetStats('shiba', 'unknown-personality')).not.toThrow()
     const stats = rollPetStats('unknown-breed', 'unknown-personality')
     expect(stats.learning + stats.obedience + stats.friendliness + stats.energy).toBe(100)
+  })
+})
+
+describe('getGrowthStageDefByLabel', () => {
+  it('resolves a shared-label stage the same way regardless of species', () => {
+    expect(getGrowthStageDefByLabel('dog', '資深老友')).toEqual({ stageKey: 'senior', emoji: '🐩', index: 1 })
+    expect(getGrowthStageDefByLabel('cat', '資深老友')).toEqual({ stageKey: 'senior', emoji: '😻', index: 1 })
+  })
+
+  it('resolves species-specific young/legend labels to that species emoji', () => {
+    expect(getGrowthStageDefByLabel('dog', '幼犬階段')).toEqual({ stageKey: 'young', emoji: '🐶', index: 5 })
+    expect(getGrowthStageDefByLabel('cat', '傳奇老貓')).toEqual({ stageKey: 'legend', emoji: '🏆🐈', index: 0 })
+  })
+
+  it('returns null for a label that matches no stage', () => {
+    expect(getGrowthStageDefByLabel('dog', '不存在的階段')).toBeNull()
+  })
+
+  it('falls back to dog when speciesId is missing or unrecognized', () => {
+    expect(getGrowthStageDefByLabel(undefined, '幼犬階段')).toEqual({ stageKey: 'young', emoji: '🐶', index: 5 })
   })
 })

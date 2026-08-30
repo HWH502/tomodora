@@ -82,6 +82,18 @@ export function getPetGrowthStage(pomodorosSinceBorn, speciesId) {
   return { stageKey: def.stageKey, emoji: override.emoji, label: override.label ?? def.label }
 }
 
+export function getGrowthStageDefByLabel(speciesId, label) {
+  const species = getSpeciesById(speciesId) ?? getSpeciesById('dog')
+  const index = GROWTH_STAGE_DEFS.findIndex((def) => {
+    const override = species.growthStageOverrides[def.stageKey]
+    return (override.label ?? def.label) === label
+  })
+  if (index === -1) return null
+  const def = GROWTH_STAGE_DEFS[index]
+  const override = species.growthStageOverrides[def.stageKey]
+  return { stageKey: def.stageKey, emoji: override.emoji, index }
+}
+
 export function calculateLegacyHeadStart(previousPetPomodorosSinceBorn) {
   return Math.min(LEGACY_HEAD_START_CAP, Math.round(previousPetPomodorosSinceBorn * LEGACY_HEAD_START_RATE))
 }

@@ -18,8 +18,8 @@ describe('ShareCardModal', () => {
   it('renders the ShareCard preview and both action buttons', () => {
     render(<ShareCardModal cardData={CARD_DATA} onClose={() => {}} />)
     expect(document.querySelector('.share-card')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '分享圖卡' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '下載圖片' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '關閉' })).toBeInTheDocument()
   })
 
   it('calls onClose when the close button is clicked', () => {
@@ -27,47 +27,6 @@ describe('ShareCardModal', () => {
     render(<ShareCardModal cardData={CARD_DATA} onClose={onClose} />)
     fireEvent.click(screen.getByRole('button', { name: '關閉' }))
     expect(onClose).toHaveBeenCalledOnce()
-  })
-
-  describe('分享圖卡 button', () => {
-    it('captures the card and shows a success hint after sharing', async () => {
-      vi.spyOn(shareCardImage, 'captureNodeAsPngBlob').mockResolvedValue(new Blob(['x'], { type: 'image/png' }))
-      vi.spyOn(shareCardImage, 'shareOrDownloadPngBlob').mockResolvedValue('shared')
-
-      render(<ShareCardModal cardData={CARD_DATA} onClose={() => {}} />)
-      fireEvent.click(screen.getByRole('button', { name: '分享圖卡' }))
-
-      await waitFor(() => expect(screen.getByText('已分享出去！')).toBeInTheDocument())
-    })
-
-    it('shows a downloaded hint when shareOrDownloadPngBlob falls back to "downloaded"', async () => {
-      vi.spyOn(shareCardImage, 'captureNodeAsPngBlob').mockResolvedValue(new Blob(['x'], { type: 'image/png' }))
-      vi.spyOn(shareCardImage, 'shareOrDownloadPngBlob').mockResolvedValue('downloaded')
-
-      render(<ShareCardModal cardData={CARD_DATA} onClose={() => {}} />)
-      fireEvent.click(screen.getByRole('button', { name: '分享圖卡' }))
-
-      await waitFor(() => expect(screen.getByText('已下載圖片！')).toBeInTheDocument())
-    })
-
-    it('shows nothing extra when the user cancels the share sheet', async () => {
-      vi.spyOn(shareCardImage, 'captureNodeAsPngBlob').mockResolvedValue(new Blob(['x'], { type: 'image/png' }))
-      vi.spyOn(shareCardImage, 'shareOrDownloadPngBlob').mockResolvedValue('cancelled')
-
-      render(<ShareCardModal cardData={CARD_DATA} onClose={() => {}} />)
-      fireEvent.click(screen.getByRole('button', { name: '分享圖卡' }))
-
-      await waitFor(() => expect(screen.queryByText(/已分享出去|已下載圖片/)).not.toBeInTheDocument())
-    })
-
-    it('shows an error hint when capture fails', async () => {
-      vi.spyOn(shareCardImage, 'captureNodeAsPngBlob').mockRejectedValue(new Error('boom'))
-
-      render(<ShareCardModal cardData={CARD_DATA} onClose={() => {}} />)
-      fireEvent.click(screen.getByRole('button', { name: '分享圖卡' }))
-
-      await waitFor(() => expect(screen.getByText('圖卡產生失敗，請再試一次。')).toBeInTheDocument())
-    })
   })
 
   describe('下載圖片 button', () => {

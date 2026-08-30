@@ -1,6 +1,6 @@
 import { todayDateString } from './date'
 
-function mondayOnOrBefore(date) {
+export function mondayOnOrBefore(date) {
   const weekday = date.getDay()
   const diff = weekday === 0 ? 6 : weekday - 1
   const result = new Date(date)
@@ -9,7 +9,7 @@ function mondayOnOrBefore(date) {
   return result
 }
 
-function sundayOnOrAfter(date) {
+export function sundayOnOrAfter(date) {
   const weekday = date.getDay()
   const diff = weekday === 0 ? 0 : 7 - weekday
   const result = new Date(date)
@@ -18,7 +18,7 @@ function sundayOnOrAfter(date) {
   return result
 }
 
-function maxMinutesInYear(history, year) {
+export function maxMinutesInYear(history, year) {
   const prefix = `${year}-`
   const values = Object.entries(history.days)
     .filter(([dateString]) => dateString.startsWith(prefix))
@@ -47,6 +47,19 @@ function generationIndexFor(dateString, currentPet, petMemorials) {
   return match ? match.generation : null
 }
 
+export function buildDayCell(dateString, { history, maxMinutes, currentPet, petMemorials }) {
+  const entry = history.days[dateString]
+  const minutes = entry?.minutes ?? 0
+  return {
+    date: dateString,
+    minutes,
+    count: entry?.count ?? 0,
+    colorLevel: colorLevelFor(minutes, maxMinutes),
+    growthMilestoneStageKey: entry?.growthMilestoneStageKey ?? null,
+    generationIndex: generationIndexFor(dateString, currentPet, petMemorials),
+  }
+}
+
 export function buildHeatmapYear({ year, history, currentPet, petMemorials }) {
   const jan1 = new Date(year, 0, 1)
   const dec31 = new Date(year, 11, 31)
@@ -61,17 +74,7 @@ export function buildHeatmapYear({ year, history, currentPet, petMemorials }) {
     if (!inYear) {
       cells.push({ date: null, minutes: 0, count: 0, colorLevel: 0, growthMilestoneStageKey: null, generationIndex: null })
     } else {
-      const dateString = todayDateString(cursor)
-      const entry = history.days[dateString]
-      const minutes = entry?.minutes ?? 0
-      cells.push({
-        date: dateString,
-        minutes,
-        count: entry?.count ?? 0,
-        colorLevel: colorLevelFor(minutes, maxMinutes),
-        growthMilestoneStageKey: entry?.growthMilestoneStageKey ?? null,
-        generationIndex: generationIndexFor(dateString, currentPet, petMemorials),
-      })
+      cells.push(buildDayCell(todayDateString(cursor), { history, maxMinutes, currentPet, petMemorials }))
     }
     cursor.setDate(cursor.getDate() + 1)
   }

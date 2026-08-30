@@ -22,3 +22,35 @@ describe('Timer', () => {
     expect(screen.getByText(formatted)).toBeInTheDocument()
   })
 })
+
+describe('round display', () => {
+  it('shows the round count when both currentRound and totalRounds are given', () => {
+    render(<Timer phase="work" secondsLeft={100} totalSeconds={1500} currentRound={2} totalRounds={4} />)
+    expect(screen.getByText('第 2 / 4 輪')).toBeInTheDocument()
+  })
+
+  it('renders no round text when currentRound/totalRounds are omitted', () => {
+    render(<Timer phase="work" secondsLeft={0} />)
+    expect(screen.queryByText(/第 .* 輪/)).not.toBeInTheDocument()
+  })
+})
+
+describe('progress ring', () => {
+  it('sets the ring to 0% progress at the very start of a phase', () => {
+    render(<Timer phase="work" secondsLeft={1500} totalSeconds={1500} />)
+    const ring = screen.getByTestId('timer-ring-progress')
+    expect(ring).toHaveStyle({ '--timer-progress': '0%' })
+  })
+
+  it('sets the ring further along as secondsLeft decreases', () => {
+    render(<Timer phase="work" secondsLeft={750} totalSeconds={1500} />)
+    const ring = screen.getByTestId('timer-ring-progress')
+    expect(ring).toHaveStyle({ '--timer-progress': '50%' })
+  })
+
+  it('does not divide by zero when totalSeconds is 0', () => {
+    render(<Timer phase="work" secondsLeft={0} totalSeconds={0} />)
+    const ring = screen.getByTestId('timer-ring-progress')
+    expect(ring).toHaveStyle({ '--timer-progress': '0%' })
+  })
+})

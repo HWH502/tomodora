@@ -73,23 +73,38 @@ export default function BackupRestore({ reloadPage = () => window.location.reloa
   })()
 
   return (
-    <div className="backup-restore">
-      <h3 className="backup-restore__title">備份與還原</h3>
+    <div className="backup-restore settings-page__card">
+      <h2 className="display settings-page__card-title">備份與還原</h2>
+      <p className="settings-page__card-desc">
+        把目前的進度（金錢、寵物、技能樹、專注紀錄）匯出成檔案保存，或用先前匯出的檔案還原進度（會覆蓋現在的進度）
+      </p>
 
-      <button type="button" onClick={handleExport}>
-        匯出存檔
-      </button>
+      <div className="backup-restore__actions">
+        <button type="button" className="action-btn" onClick={handleExport}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3v12" />
+            <path d="M7 10l5 5 5-5" />
+            <path d="M4 21h16" />
+          </svg>
+          匯出存檔
+        </button>
 
-      <button type="button" onClick={() => fileInputRef.current?.click()}>
-        匯入存檔
-      </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json,.json"
-        className="backup-restore__file-input"
-        onChange={handleFileChange}
-      />
+        <button type="button" className="action-btn action-btn--outline" onClick={() => fileInputRef.current?.click()}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 21V9" />
+            <path d="M7 14l5-5 5 5" />
+            <path d="M4 3h16" />
+          </svg>
+          匯入存檔
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="backup-restore__file-input"
+          onChange={handleFileChange}
+        />
+      </div>
 
       {importError && (
         <p className="backup-restore__error" role="alert">
@@ -104,12 +119,14 @@ export default function BackupRestore({ reloadPage = () => window.location.reloa
             {summary.petName ?? '尚未養寵物'}，身價 {summary.money} 元。
           </p>
           <p className="backup-restore__warning">這會蓋掉現在的進度，這個動作無法復原，確定要繼續嗎？</p>
-          <button type="button" onClick={handleConfirmImport}>
-            確定覆蓋並匯入
-          </button>
-          <button type="button" onClick={handleCancelImport}>
-            取消
-          </button>
+          <div className="backup-restore__actions">
+            <button type="button" className="action-btn" onClick={handleConfirmImport}>
+              確定覆蓋並匯入
+            </button>
+            <button type="button" className="action-btn action-btn--outline" onClick={handleCancelImport}>
+              取消
+            </button>
+          </div>
         </div>
       )}
     </div>

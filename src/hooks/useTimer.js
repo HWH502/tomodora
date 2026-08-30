@@ -22,6 +22,7 @@ export function useTimer({ onWorkSessionComplete } = {}) {
   const [isRunning, setIsRunning] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(() => durationSecondsFor('work', getSettings()))
   const [todayCount, setTodayCount] = useState(getTodayCount)
+  const [currentRound, setCurrentRound] = useState(1)
 
   const intervalRef = useRef(null)
   const endTimestampRef = useRef(null)
@@ -60,6 +61,7 @@ export function useTimer({ onWorkSessionComplete } = {}) {
       } else {
         nextPhase = 'shortBreak'
       }
+      setCurrentRound(workSessionsSinceLongBreakRef.current + 1)
     } else {
       nextPhase = 'work'
     }
@@ -176,5 +178,8 @@ export function useTimer({ onWorkSessionComplete } = {}) {
     updateSettings,
     completeWorkSessionsInstantly,
     simulatePreviousDay,
+    totalSeconds: durationSecondsFor(phase, settings),
+    currentRound,
+    totalRounds: WORK_SESSIONS_PER_LONG_BREAK,
   }
 }

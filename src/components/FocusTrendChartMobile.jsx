@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { getMonthlyTotals, getWeeklyTotals } from '../utils/focusTrend'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 6
 
 // Some touch browsers replay a synthetic mouseenter after a tap for legacy
 // :hover compatibility. Without this guard that replay could immediately
@@ -9,7 +9,7 @@ const PAGE_SIZE = 12
 // window of a touch tap is treated as that replay and ignored.
 const TOUCH_HOVER_SUPPRESS_MS = 500
 
-export default function FocusTrendChart({ history }) {
+export default function FocusTrendChartMobile({ history }) {
   const [granularity, setGranularity] = useState('week')
   const [offset, setOffset] = useState(0)
   const [activeKey, setActiveKey] = useState(null)
@@ -64,19 +64,19 @@ export default function FocusTrendChart({ history }) {
   }
 
   return (
-    <section className="focus-trend">
-      <div className="focus-trend__controls">
-        <div className="focus-trend__granularity">
+    <section className="focus-trend-mobile">
+      <div className="focus-trend-mobile__controls">
+        <div className="focus-trend-mobile__granularity">
           <button
             type="button"
-            className={granularity === 'week' ? 'focus-trend__tab focus-trend__tab--active' : 'focus-trend__tab'}
+            className={granularity === 'week' ? 'focus-trend-mobile__tab focus-trend-mobile__tab--active' : 'focus-trend-mobile__tab'}
             onClick={() => switchGranularity('week')}
           >
             週
           </button>
           <button
             type="button"
-            className={granularity === 'month' ? 'focus-trend__tab focus-trend__tab--active' : 'focus-trend__tab'}
+            className={granularity === 'month' ? 'focus-trend-mobile__tab focus-trend-mobile__tab--active' : 'focus-trend-mobile__tab'}
             onClick={() => switchGranularity('month')}
           >
             月
@@ -84,15 +84,15 @@ export default function FocusTrendChart({ history }) {
         </div>
       </div>
 
-      <div className="focus-trend__bars">
+      <div className="focus-trend-mobile__bars">
         {bars.map((bar) => {
           const isActive = activeKey === bar.key
-          const tooltipId = `focus-trend-tooltip-${bar.key}`
+          const tooltipId = `focus-trend-mobile-tooltip-${bar.key}`
           return (
             <div
-              className="focus-trend__bar-column"
+              className="focus-trend-mobile__bar-column"
               key={bar.key}
-              data-testid="focus-trend-bar-column"
+              data-testid="focus-trend-mobile-bar-column"
               tabIndex={0}
               aria-describedby={isActive ? tooltipId : undefined}
               onMouseEnter={() => handleMouseEnter(bar.key)}
@@ -102,13 +102,15 @@ export default function FocusTrendChart({ history }) {
               onPointerUp={(event) => handlePointerUp(bar.key, event)}
             >
               <div
-                data-testid="focus-trend-bar"
-                className="focus-trend__bar"
+                data-testid="focus-trend-mobile-bar"
+                className="focus-trend-mobile__bar"
                 style={{ height: `${Math.round((bar.minutes / maxMinutes) * 100)}%` }}
               />
-              <span className="focus-trend__bar-label">{bar.label.slice(5)}</span>
+              <span data-testid="focus-trend-mobile-bar-label" className="focus-trend-mobile__bar-label">
+                {bar.label.slice(5)}
+              </span>
               {isActive && (
-                <span id={tooltipId} role="tooltip" className="focus-trend__tooltip">
+                <span id={tooltipId} role="tooltip" className="focus-trend-mobile__tooltip">
                   {bar.label}｜{bar.minutes} 分鐘｜{bar.count} 次
                 </span>
               )}
@@ -117,17 +119,16 @@ export default function FocusTrendChart({ history }) {
         })}
       </div>
 
-      <div className="focus-trend__pager">
-        <button type="button" aria-label="上一頁" className="focus-pager-btn" onClick={() => setOffset((o) => o + PAGE_SIZE)}>
+      <div className="focus-trend-mobile__pager">
+        <button type="button" aria-label="上一頁" onClick={() => setOffset((o) => o + PAGE_SIZE)}>
           ‹
         </button>
-        <span data-testid="focus-trend-range-label" className="focus-trend__range-label">
+        <span data-testid="focus-trend-mobile-range-label" className="focus-trend-mobile__range-label">
           {rangeLabel}
         </span>
         <button
           type="button"
           aria-label="下一頁"
-          className="focus-pager-btn"
           disabled={offset === 0}
           onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
         >

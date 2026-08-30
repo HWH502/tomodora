@@ -44,6 +44,15 @@ export const MOOD_LABELS = {
   happy: '開心',
 }
 
+export const MOOD_EMOJI = {
+  sick: '🤒',
+  hungry: '🍖',
+  sad: '😢',
+  dirty: '🧼',
+  excited: '🤩',
+  happy: '😊',
+}
+
 export function determineMood({ health, affection, cleanliness, hunger }) {
   if (health < DANGER_THRESHOLD) return 'sick'
   if (hunger < DANGER_THRESHOLD) return 'hungry'

@@ -51,6 +51,45 @@ describe('initial state', () => {
   })
 })
 
+describe('round tracking', () => {
+  it('starts at round 1 of totalRounds=4', () => {
+    const { result } = renderHook(() => useTimer())
+    expect(result.current.currentRound).toBe(1)
+    expect(result.current.totalRounds).toBe(4)
+  })
+
+  it('increments currentRound after each completed work session, and resets to 1 after the long break', () => {
+    const { result } = renderHook(() => useTimer())
+
+    completeCurrentPhase(result) // work #1 -> shortBreak
+    expect(result.current.currentRound).toBe(2)
+
+    completeCurrentPhase(result) // shortBreak -> work
+    completeCurrentPhase(result) // work #2 -> shortBreak
+    expect(result.current.currentRound).toBe(3)
+
+    completeCurrentPhase(result) // shortBreak -> work
+    completeCurrentPhase(result) // work #3 -> shortBreak
+    expect(result.current.currentRound).toBe(4)
+
+    completeCurrentPhase(result) // shortBreak -> work
+    completeCurrentPhase(result) // work #4 -> longBreak (resets)
+    expect(result.current.currentRound).toBe(1)
+  })
+})
+
+describe('totalSeconds', () => {
+  it('matches secondsLeft at the start of a phase, and follows settings changes', () => {
+    const { result } = renderHook(() => useTimer())
+    expect(result.current.totalSeconds).toBe(1500)
+
+    act(() => {
+      result.current.updateSettings({ workMinutes: 10, shortBreakMinutes: 5, longBreakMinutes: 15 })
+    })
+    expect(result.current.totalSeconds).toBe(600)
+  })
+})
+
 describe('start', () => {
   it('sets isRunning and requests notification permission', () => {
     const { result } = renderHook(() => useTimer())

@@ -6,103 +6,58 @@ import { defaultOwnerSkillTree } from '../utils/ownerSkillTree'
 const pet = { speciesId: 'dog', breedId: 'shiba' }
 const emptyProgress = { size: { small: 0, medium: 0, large: 0 }, species: { dog: 0, cat: 0 } }
 
+function renderSkillTree(overrides = {}) {
+  return render(
+    <SkillTree
+      ownerSkillTree={defaultOwnerSkillTree()}
+      skillPoints={0}
+      pet={pet}
+      petProgressCounts={emptyProgress}
+      onUpgradeLinear={() => {}}
+      onUpgradeSpecialization={() => {}}
+      onUnlockSingle={() => {}}
+      {...overrides}
+    />,
+  )
+}
+
 describe('SkillTree', () => {
-  it('is collapsed by default and expands on click', () => {
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={0}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={() => {}}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    expect(screen.queryByText('訓練技巧')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+  it('shows a page title next to the skill-points chip', () => {
+    renderSkillTree()
+    expect(screen.getByText('技能樹')).toBeInTheDocument()
+    expect(screen.getByText('可用技能點：0', { exact: false })).toBeInTheDocument()
+  })
+
+  it('shows skill points and skill tracks immediately, without needing to expand anything', () => {
+    renderSkillTree()
     expect(screen.getByText('訓練技巧')).toBeInTheDocument()
+    expect(screen.getByText('可用技能點：0', { exact: false })).toBeInTheDocument()
   })
 
   it('disables the upgrade button when skill points are insufficient', () => {
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={0}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={() => {}}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+    renderSkillTree()
     expect(screen.getAllByText('升級（30 點）')[0]).toBeDisabled()
   })
 
   it('calls onUpgradeLinear with the track id when affordable and clicked', () => {
     const onUpgradeLinear = vi.fn()
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={30}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={onUpgradeLinear}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+    renderSkillTree({ skillPoints: 30, onUpgradeLinear })
     fireEvent.click(screen.getAllByText('升級（30 點）')[0])
     expect(onUpgradeLinear).toHaveBeenCalledWith('trainingTechnique')
   })
 
   it('shows a pet-count requirement instead of a price when a specialization track is not yet eligible', () => {
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={30}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={() => {}}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+    renderSkillTree({ skillPoints: 30 })
     expect(screen.getAllByText('需養過 1 隻（目前 0）').length).toBeGreaterThan(0)
   })
 
   it('shows no tooltip until a skill label is hovered', () => {
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={0}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={() => {}}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+    renderSkillTree()
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
 
   it('shows a plain-language benefit description in a tooltip on hover, and hides it on mouse-leave', () => {
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={0}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={() => {}}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+    renderSkillTree()
 
     const trainingLabel = screen.getByText('訓練技巧')
     fireEvent.mouseEnter(trainingLabel)
@@ -113,18 +68,7 @@ describe('SkillTree', () => {
   })
 
   it('shows the tooltip on keyboard focus, and toggles it on a touch tap', () => {
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={0}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={() => {}}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+    renderSkillTree()
 
     const trainingLabel = screen.getByText('訓練技巧')
     fireEvent.focus(trainingLabel)
@@ -139,18 +83,7 @@ describe('SkillTree', () => {
   })
 
   it('mentions the pet-condition limitation for specialization tracks, not just for linear tracks', () => {
-    render(
-      <SkillTree
-        ownerSkillTree={defaultOwnerSkillTree()}
-        skillPoints={0}
-        pet={pet}
-        petProgressCounts={emptyProgress}
-        onUpgradeLinear={() => {}}
-        onUpgradeSpecialization={() => {}}
-        onUnlockSingle={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByText('技能樹 ▸'))
+    renderSkillTree()
 
     fireEvent.mouseEnter(screen.getByText('體型專精（小型）'))
     expect(screen.getByRole('tooltip')).toHaveTextContent('只')

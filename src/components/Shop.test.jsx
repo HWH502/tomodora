@@ -12,16 +12,15 @@ const defaultProps = {
   onPurchase: vi.fn(),
 }
 
-async function renderExpanded(props = {}) {
-  const user = userEvent.setup()
-  render(<Shop {...defaultProps} {...props} />)
-  await user.click(screen.getByRole('button', { name: /商店/ }))
-  return user
+function buttonFor(itemName) {
+  return screen.getByText(itemName).closest('li').querySelector('button')
 }
 
 describe('Shop', () => {
-  it('renders all 7 items with their name and cost', async () => {
-    await renderExpanded()
+  it('renders both section headings and all 8 items directly, with no expand step', () => {
+    render(<Shop {...defaultProps} />)
+    expect(screen.getByText('一次性道具')).toBeInTheDocument()
+    expect(screen.getByText('消耗品（每天自動用掉一份補狀態）')).toBeInTheDocument()
     expect(screen.getByText('玩具球')).toBeInTheDocument()
     expect(screen.getByText('水盆')).toBeInTheDocument()
     expect(screen.getByText('項圈')).toBeInTheDocument()
@@ -29,72 +28,78 @@ describe('Shop', () => {
     expect(screen.getByText('衣服')).toBeInTheDocument()
     expect(screen.getByText('飼料')).toBeInTheDocument()
     expect(screen.getByText('營養品')).toBeInTheDocument()
+    expect(screen.getByText('盥洗用品')).toBeInTheDocument()
     expect(screen.getByText('20 💰')).toBeInTheDocument()
   })
 
-  it('disables every buy button when money is 0', async () => {
-    await renderExpanded()
-    const toggle = screen.getByRole('button', { name: /商店/ })
+  it('shows the current money total in the header chip', () => {
+    render(<Shop {...defaultProps} money={150} />)
+    expect(screen.getByText('💰 金錢：150')).toBeInTheDocument()
+  })
+
+  it('disables every buy button when money is 0', () => {
+    render(<Shop {...defaultProps} />)
     for (const button of screen.getAllByRole('button')) {
-      if (button === toggle) continue
       expect(button).toBeDisabled()
     }
   })
 
-  it('enables only affordable items when money is 20', async () => {
-    await renderExpanded({ money: 20 })
-    expect(screen.getByText('15 💰')).not.toBeDisabled() // bowl
-    expect(screen.getByText('20 💰')).not.toBeDisabled() // ball
-    expect(screen.getByText('4 💰')).not.toBeDisabled() // kibble
-    expect(screen.getByText('8 💰')).not.toBeDisabled() // supplement
-    expect(screen.getByText('30 💰')).toBeDisabled() // collar
-    expect(screen.getByText('25 💰')).toBeDisabled() // leash
-    expect(screen.getByText('40 💰')).toBeDisabled() // outfit
+  it('enables only affordable items when money is 20, each showing the 購買 label', () => {
+    render(<Shop {...defaultProps} money={20} />)
+    expect(buttonFor('水盆')).not.toBeDisabled() // 15
+    expect(buttonFor('玩具球')).not.toBeDisabled() // 20
+    expect(buttonFor('飼料')).not.toBeDisabled() // 4
+    expect(buttonFor('營養品')).not.toBeDisabled() // 8
+    expect(buttonFor('盥洗用品')).not.toBeDisabled() // 6
+    expect(buttonFor('項圈')).toBeDisabled() // 30
+    expect(buttonFor('牽繩')).toBeDisabled() // 25
+    expect(buttonFor('衣服')).toBeDisabled() // 40
+    expect(buttonFor('水盆')).toHaveTextContent('購買')
+    expect(buttonFor('項圈')).toHaveTextContent('金額不足')
   })
 
   it('calls onPurchase with the item id when an enabled button is clicked', async () => {
     const onPurchase = vi.fn()
-    const user = await renderExpanded({ money: 20, onPurchase })
-
-    await user.click(screen.getByText('15 💰')) // bowl
+    const user = userEvent.setup()
+    render(<Shop {...defaultProps} money={20} onPurchase={onPurchase} />)
+    await user.click(buttonFor('水盆'))
     expect(onPurchase).toHaveBeenCalledWith('bowl')
   })
 
-  it('shows 已擁有 and stays disabled for an already-owned collectible regardless of money', async () => {
-    await renderExpanded({ money: 1000, ownedCollectibles: ['bowl'] })
-    const ownedButton = screen.getByText('已擁有')
-    expect(ownedButton).toBeInTheDocument()
-    expect(ownedButton).toBeDisabled()
+  it('shows 已擁有 and stays disabled for an already-owned collectible regardless of money', () => {
+    render(<Shop {...defaultProps} money={1000} ownedCollectibles={['bowl']} />)
+    const button = buttonFor('水盆')
+    expect(button).toHaveTextContent('已擁有')
+    expect(button).toBeDisabled()
   })
 
-  it('shows a purchase count suffix for a repeated consumable, and none for an untouched one', async () => {
-    await renderExpanded({ money: 100, consumablePurchases: { kibble: 2 } })
-    expect(screen.getByText('×2')).toBeInTheDocument()
-    expect(screen.queryByText('×0')).not.toBeInTheDocument()
+  it('shows a 庫存 stock badge for each consumable reflecting consumablePurchases, and none for collectibles', () => {
+    render(<Shop {...defaultProps} consumablePurchases={{ kibble: 2 }} />)
+    expect(screen.getByText('庫存 2')).toBeInTheDocument() // kibble
+    expect(screen.getAllByText('庫存 0')).toHaveLength(2) // supplement, grooming
+    expect(screen.getByText('玩具球').closest('li').textContent).not.toContain('庫存')
   })
 
-  it('shows only the plain price when no discount is unlocked', async () => {
-    await renderExpanded({ money: 100 })
-    expect(screen.getByText('4 💰')).toBeInTheDocument()
+  it('shows only the plain price when no discount is unlocked', () => {
+    render(<Shop {...defaultProps} money={100} />)
+    expect(screen.getByText('4 💰 / 份')).toBeInTheDocument()
   })
 
-  it('shows the struck-through original price next to the discounted price once bargainHunter is unlocked', async () => {
-    await renderExpanded({
-      money: 100,
-      ownerSkillTree: { ...defaultOwnerSkillTree(), bargainHunter: 3 },
-    })
-    expect(screen.getByText('20')).toBeInTheDocument() // 玩具球原價
+  it('shows the struck-through original price next to the discounted price once bargainHunter is unlocked', () => {
+    render(
+      <Shop {...defaultProps} money={100} ownerSkillTree={{ ...defaultOwnerSkillTree(), bargainHunter: 3 }} />,
+    )
+    expect(screen.getByText('20')).toBeInTheDocument() // 玩具球原價，被劃掉
     expect(screen.getByText('17 💰')).toBeInTheDocument() // 20 打 85 折 = 17
   })
 
-  it('does not show a strikethrough for a cheap item when rounding erases the discount', async () => {
-    await renderExpanded({
-      money: 100,
-      ownerSkillTree: { ...defaultOwnerSkillTree(), bargainHunter: 1 },
-    })
+  it('does not show a strikethrough for a cheap item when rounding erases the discount', () => {
+    render(
+      <Shop {...defaultProps} money={100} ownerSkillTree={{ ...defaultOwnerSkillTree(), bargainHunter: 1 }} />,
+    )
     // kibble costs 4, bargainHunter level 1 is a 5% discount: round(4 * 0.95) = 4,
     // so the displayed price is unchanged and no strikethrough should render.
-    const kibblePriceButton = screen.getByText('4 💰').closest('button')
-    expect(kibblePriceButton.querySelector('s')).not.toBeInTheDocument()
+    const priceEl = screen.getByText('飼料').closest('li').querySelector('.shop-item__price')
+    expect(priceEl.querySelector('s')).not.toBeInTheDocument()
   })
 })

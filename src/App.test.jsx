@@ -14,16 +14,56 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+function createFirstPet() {
+  fireEvent.click(screen.getByText('狗'))
+  fireEvent.click(screen.getByText('柴犬'))
+  fireEvent.click(screen.getByText('就是這隻！'))
+}
+
 describe('App', () => {
-  it('shows the initial work phase, full duration, and zero completed count', () => {
-    const { container } = render(<App />)
+  it('shows the pet-creation onboarding by default for a brand-new install, on the 寵物 page', () => {
+    render(<App />)
+    expect(screen.getByRole('button', { name: '寵物' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText('選擇你的第一隻寵物')).toBeInTheDocument()
+  })
+
+  it('shows the species/breed picker for a brand-new install, and the pet panel after choosing', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByText('貓'))
+    fireEvent.click(screen.getByText('布偶貓'))
+    expect(screen.getByText('確認你的寵物')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('就是這隻！'))
+
+    expect(screen.queryByText('選擇你的第一隻寵物')).not.toBeInTheDocument()
+    expect(screen.queryByText('確認你的寵物')).not.toBeInTheDocument()
+    expect(screen.getByPlaceholderText('幫寵物取個名字')).toBeInTheDocument()
+  })
+
+  it('navigates to 首頁 and shows the initial work phase, full duration, and zero completed count', () => {
+    render(<App />)
+    createFirstPet()
+
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
+
     expect(screen.getByText('工作時間')).toBeInTheDocument()
     expect(screen.getByText('25:00')).toBeInTheDocument()
-    expect(container.textContent).toContain('今天已完成 0 個番茄鐘')
+    expect(screen.getByText((_, element) => element?.classList.contains('today-stats') && element.textContent === '今天已完成 0 個番茄鐘')).toBeInTheDocument()
+  })
+
+  it('shows the pet card and round count on 首頁 once a pet exists', () => {
+    render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
+
+    expect(screen.getByText('第 1 / 4 輪')).toBeInTheDocument()
   })
 
   it('counts down after clicking 開始, and stops after 暫停', () => {
     render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
 
     fireEvent.click(screen.getByText('開始'))
     expect(screen.getByText('暫停')).toBeInTheDocument()
@@ -42,6 +82,8 @@ describe('App', () => {
 
   it('resets the display back to the full duration', () => {
     render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
 
     fireEvent.click(screen.getByText('開始'))
     act(() => {
@@ -53,78 +95,93 @@ describe('App', () => {
   })
 
   it('updates today count, pet currency, and phase after a full work session completes', () => {
-    const { container } = render(<App />)
-
-    // new-install onboarding: pick a species then a breed, then confirm the stat preview
-    fireEvent.click(screen.getByText('狗'))
-    fireEvent.click(screen.getByText('柴犬'))
-    fireEvent.click(screen.getByText('就是這隻！'))
+    render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
 
     fireEvent.click(screen.getByText('開始'))
     act(() => {
       vi.advanceTimersByTime(25 * 60 * 1000)
     })
 
-    expect(container.textContent).toContain('今天已完成 1 個番茄鐘')
-    expect(container.textContent).toContain('💰 50')
-    expect(container.textContent).toContain('⭐ 5')
+    expect(screen.getByText((_, element) => element?.classList.contains('today-stats') && element.textContent === '今天已完成 1 個番茄鐘')).toBeInTheDocument()
     expect(screen.getByText('短休息')).toBeInTheDocument()
     expect(screen.getByText('開始')).toBeInTheDocument()
-  })
 
-  it('shows the species/breed picker for a brand-new install, and the pet panel after choosing', () => {
-    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '商店' }))
+    expect(screen.getByText('金錢：50', { exact: false })).toBeInTheDocument()
 
-    expect(screen.getByText('選擇你的第一隻寵物')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByText('貓'))
-    fireEvent.click(screen.getByText('布偶貓'))
-
-    expect(screen.getByText('確認你的寵物')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByText('就是這隻！'))
-
-    expect(screen.queryByText('選擇你的第一隻寵物')).not.toBeInTheDocument()
-    expect(screen.queryByText('確認你的寵物')).not.toBeInTheDocument()
-    expect(screen.getByPlaceholderText('幫寵物取個名字')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '技能樹' }))
+    expect(screen.getByText('可用技能點：5', { exact: false })).toBeInTheDocument()
   })
 
   it('opens the dev panel and instantly completes a simulated pomodoro without waiting', () => {
-    const { container } = render(<App />)
-
-    fireEvent.click(screen.getByText('狗'))
-    fireEvent.click(screen.getByText('柴犬'))
-    fireEvent.click(screen.getByText('就是這隻！'))
+    render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
 
     fireEvent.click(screen.getByText('工程模式'))
     fireEvent.click(screen.getByText('模擬完成'))
 
-    expect(container.textContent).toContain('今天已完成 1 個番茄鐘')
-    expect(container.textContent).toContain('💰 50')
-    expect(container.textContent).toContain('⭐ 5')
+    expect(screen.getByText((_, element) => element?.classList.contains('today-stats') && element.textContent === '今天已完成 1 個番茄鐘')).toBeInTheDocument()
     expect(screen.getByText('工作時間')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '商店' }))
+    expect(screen.getByText('金錢：50', { exact: false })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '技能樹' }))
+    expect(screen.getByText('可用技能點：5', { exact: false })).toBeInTheDocument()
   })
 
-  it('reveals skill track content after a single click on the skill tree toggle', () => {
+  it('shows the skill tree as its own page from the bottom nav, reachable even before a pet exists', () => {
     render(<App />)
 
-    expect(screen.queryByText('訓練技巧')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '技能樹' }))
+    expect(screen.getByRole('button', { name: '技能樹' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText('訓練技巧')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText('技能樹 ▸'))
-
+    fireEvent.click(screen.getByRole('button', { name: '寵物' }))
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '技能樹' }))
     expect(screen.getByText('訓練技巧')).toBeInTheDocument()
   })
 
-  it('toggles between the main layout and the focus stats page', () => {
+  it('shows the 紀念牆 tab on the 寵物 page instead of a skill-tree tab', () => {
     render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '寵物' }))
+
+    expect(screen.queryByRole('tab', { name: '技能樹' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: '紀念牆' }))
+    expect(screen.getByText('還沒有寵物離開，這裡以後會記錄牠們的故事。')).toBeInTheDocument()
+  })
+
+  it('navigates to the 統計 page and back to 首頁', () => {
+    render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
     expect(screen.getByText('今天已完成', { exact: false })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '查看統計' }))
+    fireEvent.click(screen.getByRole('button', { name: '統計' }))
     expect(screen.getByText('專注成效統計')).toBeInTheDocument()
     expect(screen.queryByText('今天已完成', { exact: false })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '番茄鐘' })).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '關閉統計' }))
+    fireEvent.click(screen.getByRole('button', { name: '首頁' }))
     expect(screen.getByText('今天已完成', { exact: false })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '首頁' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('navigates to the 商店 page directly, with no expand step and no 番茄鐘 heading', () => {
+    render(<App />)
+    createFirstPet()
+    fireEvent.click(screen.getByRole('button', { name: '商店' }))
+
+    expect(screen.getByText('小商店')).toBeInTheDocument()
+    expect(screen.getByText('一次性道具')).toBeInTheDocument()
+    expect(screen.getByText('玩具球')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '番茄鐘' })).not.toBeInTheDocument()
   })
 
   it('shows a trim notice banner after a pomodoro completion trims old focus history, and can dismiss it', async () => {
@@ -157,6 +214,9 @@ describe('App', () => {
 
     try {
       render(<App />)
+      createFirstPet()
+      fireEvent.click(screen.getByRole('button', { name: '首頁' }))
+
       fireEvent.click(screen.getByRole('button', { name: '開始' }))
       act(() => {
         vi.advanceTimersByTime(25 * 60 * 1000)
@@ -173,13 +233,25 @@ describe('App', () => {
 })
 
 describe('App - 備份與還原', () => {
-  it('shows the backup/restore section inside the settings panel', () => {
+  it('shows the backup/restore section on the 設定 page', () => {
     render(<App />)
+    createFirstPet()
 
-    fireEvent.click(screen.getByText('設定'))
+    fireEvent.click(screen.getByRole('button', { name: '設定' }))
 
     expect(screen.getByText('備份與還原')).toBeInTheDocument()
     expect(screen.getByText('匯出存檔')).toBeInTheDocument()
     expect(screen.getByText('匯入存檔')).toBeInTheDocument()
+  })
+
+  it('shows the 設定 page title and hides the 番茄鐘 heading', () => {
+    render(<App />)
+    createFirstPet()
+
+    fireEvent.click(screen.getByRole('button', { name: '設定' }))
+
+    expect(screen.getByText('設定')).toBeInTheDocument()
+    expect(screen.getByText('番茄鐘時長')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '番茄鐘' })).not.toBeInTheDocument()
   })
 })

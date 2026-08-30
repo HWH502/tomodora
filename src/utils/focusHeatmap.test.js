@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildHeatmapYear } from './focusHeatmap'
+import { buildDayCell, buildHeatmapYear, maxMinutesInYear, mondayOnOrBefore, sundayOnOrAfter } from './focusHeatmap'
 import { todayDateString } from './date'
 
 function emptyHistory() {
@@ -129,5 +129,91 @@ describe('buildHeatmapYear', () => {
     const byDate = Object.fromEntries(weeks.flat().filter((c) => c.date).map((c) => [c.date, c]))
     expect(byDate['2026-01-15'].generationIndex).toBe(1)
     expect(byDate['2026-02-01'].generationIndex).toBe(2)
+  })
+})
+
+describe('mondayOnOrBefore', () => {
+  it('returns the same date when it is already a Monday', () => {
+    const monday = new Date(2026, 7, 24) // 2026-08-24 is a Monday
+    expect(mondayOnOrBefore(monday).getDate()).toBe(24)
+  })
+
+  it('rolls back to the preceding Monday for any other weekday', () => {
+    const wednesday = new Date(2026, 7, 26)
+    const result = mondayOnOrBefore(wednesday)
+    expect(result.getDay()).toBe(1)
+    expect(result.getDate()).toBe(24)
+  })
+
+  it('rolls a Sunday back to the Monday six days earlier', () => {
+    const sunday = new Date(2026, 7, 30)
+    const result = mondayOnOrBefore(sunday)
+    expect(result.getDay()).toBe(1)
+    expect(result.getDate()).toBe(24)
+  })
+})
+
+describe('sundayOnOrAfter', () => {
+  it('returns the same date when it is already a Sunday', () => {
+    const sunday = new Date(2026, 7, 30)
+    expect(sundayOnOrAfter(sunday).getDate()).toBe(30)
+  })
+
+  it('rolls forward to the next Sunday for any other weekday', () => {
+    const wednesday = new Date(2026, 7, 26)
+    const result = sundayOnOrAfter(wednesday)
+    expect(result.getDay()).toBe(0)
+    expect(result.getDate()).toBe(30)
+  })
+})
+
+describe('maxMinutesInYear', () => {
+  it('finds the max minutes among days within the given year only', () => {
+    const history = {
+      version: 1,
+      days: {
+        '2025-06-01': { count: 1, minutes: 999, growthMilestoneStageKey: null },
+        '2026-03-01': { count: 1, minutes: 40, growthMilestoneStageKey: null },
+        '2026-03-02': { count: 1, minutes: 70, growthMilestoneStageKey: null },
+      },
+    }
+    expect(maxMinutesInYear(history, 2026)).toBe(70)
+  })
+
+  it('returns 0 when there is no data for that year', () => {
+    expect(maxMinutesInYear({ version: 1, days: {} }, 2026)).toBe(0)
+  })
+})
+
+describe('buildDayCell', () => {
+  it('builds a cell from a recorded day entry, scaling colorLevel against the given maxMinutes', () => {
+    const history = { version: 1, days: { '2026-03-01': { count: 2, minutes: 50, growthMilestoneStageKey: 'growing' } } }
+    const cell = buildDayCell('2026-03-01', { history, maxMinutes: 100, currentPet: null, petMemorials: [] })
+    expect(cell).toEqual({
+      date: '2026-03-01',
+      minutes: 50,
+      count: 2,
+      colorLevel: 2,
+      growthMilestoneStageKey: 'growing',
+      generationIndex: null,
+    })
+  })
+
+  it('builds a zeroed cell for a date with no history entry', () => {
+    const cell = buildDayCell('2026-03-05', { history: { version: 1, days: {} }, maxMinutes: 100, currentPet: null, petMemorials: [] })
+    expect(cell).toEqual({
+      date: '2026-03-05',
+      minutes: 0,
+      count: 0,
+      colorLevel: 0,
+      growthMilestoneStageKey: null,
+      generationIndex: null,
+    })
+  })
+
+  it('resolves generationIndex from the current pet the same way buildHeatmapYear does', () => {
+    const currentPet = { generation: 3, bornAt: '2026-01-01T00:00:00.000Z' }
+    const cell = buildDayCell('2026-03-01', { history: { version: 1, days: {} }, maxMinutes: 0, currentPet, petMemorials: [] })
+    expect(cell.generationIndex).toBe(3)
   })
 })

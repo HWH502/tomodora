@@ -1,7 +1,6 @@
-import { GROWTH_STAGE_DEFS, getPetGrowthStage } from './pet'
-import { getSpeciesById } from './petSpecies'
+import { getGrowthStageDefByLabel, GROWTH_STAGE_DEFS, getPetGrowthStage } from './pet'
 
-const DEPARTURE_REASON_NOTE_ENDINGS = {
+export const DEPARTURE_REASON_NOTE_ENDINGS = {
   health: '後來生病離開了。',
   replaced: '後來開始照顧新的家人了。',
   affection: '後來離開去別的地方了。',
@@ -18,12 +17,7 @@ function formatStartedAtLabel(startedAtDateString) {
 }
 
 function resolveStageLabelRank(speciesId, label) {
-  const species = getSpeciesById(speciesId) ?? getSpeciesById('dog')
-  const index = GROWTH_STAGE_DEFS.findIndex((def) => {
-    const override = species.growthStageOverrides[def.stageKey]
-    return (override.label ?? def.label) === label
-  })
-  return index === -1 ? GROWTH_STAGE_DEFS.length : index
+  return getGrowthStageDefByLabel(speciesId, label)?.index ?? GROWTH_STAGE_DEFS.length
 }
 
 function findHighestMemorial(petMemorials) {

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   canUnlockSingle,
   canUpgradeLinearTrack,
@@ -10,6 +9,7 @@ import {
   SKILL_TRACK_DESCRIPTIONS,
 } from '../utils/ownerSkillTree'
 import { useEdgeAwareTooltip } from '../hooks/useEdgeAwareTooltip'
+import PageBlobs from './PageBlobs'
 
 const BRANCH_LABELS = {
   nurture: '養育系',
@@ -19,7 +19,16 @@ const BRANCH_LABELS = {
   standalone: '獨立節點',
 }
 
+const BRANCH_COLOR_VARS = {
+  nurture: '--short',
+  business: '--work',
+  bonding: '--long',
+  auto: '--purple',
+  standalone: '--purple',
+}
+
 const BRANCH_ORDER = ['nurture', 'business', 'bonding', 'auto', 'standalone']
+const MAX_TRACK_LEVEL = 3
 
 export default function SkillTree({
   ownerSkillTree,
@@ -30,46 +39,54 @@ export default function SkillTree({
   onUpgradeSpecialization,
   onUnlockSingle,
 }) {
-  const [expanded, setExpanded] = useState(false)
   const tooltip = useEdgeAwareTooltip({ tooltipMaxWidth: 220 })
 
   return (
     <section className="skill-tree">
-      <button
-        type="button"
-        className="skill-tree__toggle"
-        onClick={() => setExpanded((value) => !value)}
-        aria-expanded={expanded}
-      >
-        技能樹 {expanded ? '▾' : '▸'}
-      </button>
-      {expanded && (
-        <div className="skill-tree__body">
-          <p className="skill-tree__points">可用技能點：{skillPoints}</p>
-          {BRANCH_ORDER.map((branch) => (
-            <div key={branch} className="skill-tree__branch">
-              <h3>{BRANCH_LABELS[branch]}</h3>
-              <ul className="skill-tree__list">
-                {SKILL_TRACK_CATALOG.filter((track) => track.branch === branch).map((track) => (
-                  <SkillTrackRow
-                    key={track.id}
-                    track={track}
-                    ownerSkillTree={ownerSkillTree}
-                    skillPoints={skillPoints}
-                    pet={pet}
-                    petProgressCounts={petProgressCounts}
-                    onUpgradeLinear={onUpgradeLinear}
-                    onUpgradeSpecialization={onUpgradeSpecialization}
-                    onUnlockSingle={onUnlockSingle}
-                    tooltip={tooltip}
-                  />
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
+      <PageBlobs />
+      <div className="skill-tree__header">
+        <p className="skill-tree__page-title display">技能樹</p>
+        <p className="chip display skill-tree__points">⭐ 可用技能點：{skillPoints}</p>
+      </div>
+      <div className="skill-tree__grid">
+        {BRANCH_ORDER.map((branch) => (
+          <div key={branch} className="skill-tree__branch">
+            <h3 style={{ color: `var(${BRANCH_COLOR_VARS[branch]})` }}>{BRANCH_LABELS[branch]}</h3>
+            <ul className="skill-tree__list">
+              {SKILL_TRACK_CATALOG.filter((track) => track.branch === branch).map((track) => (
+                <SkillTrackRow
+                  key={track.id}
+                  track={track}
+                  branchColorVar={BRANCH_COLOR_VARS[branch]}
+                  ownerSkillTree={ownerSkillTree}
+                  skillPoints={skillPoints}
+                  pet={pet}
+                  petProgressCounts={petProgressCounts}
+                  onUpgradeLinear={onUpgradeLinear}
+                  onUpgradeSpecialization={onUpgradeSpecialization}
+                  onUnlockSingle={onUnlockSingle}
+                  tooltip={tooltip}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </section>
+  )
+}
+
+function LevelDots({ level, colorVar }) {
+  return (
+    <span className="skill-tree__dots">
+      {Array.from({ length: MAX_TRACK_LEVEL }, (_, index) => (
+        <span
+          key={index}
+          className="skill-tree__dot"
+          style={{ background: index < level ? `var(${colorVar})` : 'var(--border)' }}
+        />
+      ))}
+    </span>
   )
 }
 
@@ -111,6 +128,7 @@ function SkillLabel({ track, tooltip, children }) {
 
 function SkillTrackRow({
   track,
+  branchColorVar,
   ownerSkillTree,
   skillPoints,
   pet,
@@ -127,7 +145,12 @@ function SkillTrackRow({
     return (
       <li className="skill-tree__item">
         <SkillLabel track={track} tooltip={tooltip} />
-        <button type="button" disabled={unlocked || !affordable} onClick={() => onUnlockSingle(track.id)}>
+        <button
+          type="button"
+          className="skill-tree__lvl-btn"
+          disabled={unlocked || !affordable}
+          onClick={() => onUnlockSingle(track.id)}
+        >
           {unlocked ? '已解鎖' : `解鎖（${cost} 點）`}
         </button>
       </li>
@@ -147,13 +170,18 @@ function SkillTrackRow({
     return (
       <li className="skill-tree__item">
         <SkillLabel track={track} tooltip={tooltip}>
-          <span className="skill-tree__item-level"> Lv.{level}/3</span>
+          <LevelDots level={level} colorVar={branchColorVar} />
           {level > 0 && <span className="skill-tree__item-status">{isActive ? '（生效中）' : '（暫不生效）'}</span>}
         </SkillLabel>
         {!available ? (
           <span className="skill-tree__item-status">尚無資料，暫不可解鎖</span>
         ) : check.ok ? (
-          <button type="button" disabled={!affordable} onClick={() => onUpgradeSpecialization(track.category, track.tag)}>
+          <button
+            type="button"
+            className="skill-tree__lvl-btn"
+            disabled={!affordable}
+            onClick={() => onUpgradeSpecialization(track.category, track.tag)}
+          >
             升級（{check.cost} 點）
           </button>
         ) : check.reason === 'maxed' ? (
@@ -174,10 +202,15 @@ function SkillTrackRow({
   return (
     <li className="skill-tree__item">
       <SkillLabel track={track} tooltip={tooltip}>
-        <span className="skill-tree__item-level"> Lv.{level}/3</span>
+        <LevelDots level={level} colorVar={branchColorVar} />
       </SkillLabel>
       {check.ok ? (
-        <button type="button" disabled={!affordable} onClick={() => onUpgradeLinear(track.id)}>
+        <button
+          type="button"
+          className="skill-tree__lvl-btn"
+          disabled={!affordable}
+          onClick={() => onUpgradeLinear(track.id)}
+        >
           升級（{check.cost} 點）
         </button>
       ) : (

@@ -25,6 +25,9 @@ src/assets/pets/**/.gitkeep
 src/assets/skills/**/*.png
 src/assets/skills/**/.gitkeep
 
+# Subagent-driven-development scratch workspace (per-plan ledgers/briefs/reports)
+.superpowers/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
