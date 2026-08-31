@@ -168,12 +168,12 @@ export function getFriendlinessAffectionBonus(friendliness) {
   return 0
 }
 
-export function computePomodoroAffectionGain({ friendliness, bondingLevel = 0, hasCharmSkill = false, isEighthToday = false, speciesDailyBonus = 0 }) {
+export function computePomodoroAffectionGain({ friendliness, bondingLevel = 0, hasCharmSkill = false, isEighthToday = false, speciesDailyBonus = 0, collectibleBonus = 0 }) {
   const bondingBonus = BONDING_LEVEL_BONUS[bondingLevel] ?? 0
   const friendlinessBonus = getFriendlinessAffectionBonus(friendliness)
   const charmBonus = hasCharmSkill ? 1 : 0
   const dailyBonus = isEighthToday ? AFFECTION_DAILY_BONUS + speciesDailyBonus : 0
-  return AFFECTION_PER_POMODORO + bondingBonus + friendlinessBonus + charmBonus + dailyBonus
+  return AFFECTION_PER_POMODORO + bondingBonus + friendlinessBonus + charmBonus + dailyBonus + collectibleBonus
 }
 
 export function computeLowStatAffectionPenalty({ hunger, cleanliness, health }) {

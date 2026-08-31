@@ -233,6 +233,31 @@ describe('computePomodoroAffectionGain species specialization bonus', () => {
   })
 })
 
+describe('computePomodoroAffectionGain collectible bonus (項圈)', () => {
+  it('adds the collectible bonus on every pomodoro, not just the 8th', () => {
+    expect(computePomodoroAffectionGain({ friendliness: 0, isEighthToday: false, collectibleBonus: 1 })).toBe(
+      1 + 1, // 基礎 +1，項圈額外 +1
+    )
+  })
+
+  it('stacks with the daily 8th-pomodoro bonus and other bonuses', () => {
+    expect(
+      computePomodoroAffectionGain({
+        friendliness: 40,
+        bondingLevel: 3,
+        hasCharmSkill: true,
+        isEighthToday: true,
+        speciesDailyBonus: 3,
+        collectibleBonus: 1,
+      }),
+    ).toBe(1 + 3 + 2 + 1 + (1 + 3) + 1) // base + bonding + friendliness + charm + (daily+species) + collectible
+  })
+
+  it('defaults to 0 when omitted, matching current behavior', () => {
+    expect(computePomodoroAffectionGain({ friendliness: 0, isEighthToday: false })).toBe(1)
+  })
+})
+
 describe('computeLowStatAffectionPenalty', () => {
   it('is 0 when nothing is below 20', () => {
     expect(computeLowStatAffectionPenalty({ hunger: 50, cleanliness: 50, health: 50 })).toBe(0)

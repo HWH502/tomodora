@@ -1,4 +1,11 @@
 import { getShopItem } from './shopItems'
+import {
+  getCollectibleAffectionBonus,
+  getCollectibleCleanlinessDecayReduction,
+  getCollectibleFriendlinessBonus,
+  getCollectibleHungerDecayReduction,
+  getCollectibleObedienceBonus,
+} from './collectibleEffects'
 import { calculateLegacyHeadStart, getPetGrowthStage, rollPersonality, rollPetStats } from './pet'
 import { getBreedById, getBreedByLabel, getSpeciesById } from './petSpecies'
 import { todayDateString } from './date'
@@ -187,11 +194,13 @@ function migrateLegacyOwnerState(parsed) {
   }
 }
 
-function buildOwnerBonuses(pet, ownerSkillTree) {
+function buildOwnerBonuses(pet, ownerSkillTree, ownedCollectibles) {
   return {
-    effectiveObedience: getEffectiveObedience(pet, ownerSkillTree),
-    hungerDecayReduction: getHungerDecayReduction(pet, ownerSkillTree),
-    cleanlinessDecayReduction: getCleanlinessDecayReduction(pet, ownerSkillTree),
+    effectiveObedience: getEffectiveObedience(pet, ownerSkillTree) + getCollectibleObedienceBonus(ownedCollectibles),
+    hungerDecayReduction:
+      getHungerDecayReduction(pet, ownerSkillTree) + getCollectibleHungerDecayReduction(ownedCollectibles),
+    cleanlinessDecayReduction:
+      getCleanlinessDecayReduction(pet, ownerSkillTree) + getCollectibleCleanlinessDecayReduction(ownedCollectibles),
     healthPenaltyLevel: getHealthPenaltyLevel(pet, ownerSkillTree),
     instantGuardReduction: getInstantGuardReduction(ownerSkillTree),
     insuranceTier: getInsuranceTier(ownerSkillTree),
@@ -242,7 +251,7 @@ function applyNeedsTickIfDue(state) {
   const today = todayDateString()
   if (state.pet.lastNeedsTickDate === today) return state
 
-  const ownerBonuses = buildOwnerBonuses(state.pet, state.ownerSkillTree)
+  const ownerBonuses = buildOwnerBonuses(state.pet, state.ownerSkillTree, state.ownedCollectibles)
   const petSkillIds = getUnlockedPetSkillIds(state.pet)
   const consumableRestoreAmounts = buildConsumableRestoreAmounts(state.ownerSkillTree)
   const result = runDailyNeedsTick({
@@ -386,6 +395,7 @@ export function createPet({ speciesId, breedId, name = '', personalityLabel, sta
   return saveOwnerState({
     ...state,
     petMemorials,
+    ownedCollectibles: petMemorials.length > 0 ? [] : state.ownedCollectibles,
     pet: {
       speciesId,
       speciesLabel: species.label,
@@ -462,11 +472,12 @@ export function recordPomodoroReward(durationMinutes) {
   // 所以這裡只需要讀取（不能再遞增一次，否則今天完成數會被算兩次）。
   const isEighthToday = getTodayCount() === 8
   const affectionGain = computePomodoroAffectionGain({
-    friendliness: getEffectiveFriendliness(petAfterProgress, state.ownerSkillTree),
+    friendliness: getEffectiveFriendliness(petAfterProgress, state.ownerSkillTree) + getCollectibleFriendlinessBonus(state.ownedCollectibles),
     bondingLevel: getBondingAffectionLevel(state.ownerSkillTree),
     hasCharmSkill: hasPetSkill(petAfterProgress, 'charm') || hasPetSkill(petAfterProgress, 'clingy'),
     isEighthToday,
     speciesDailyBonus: getSpeciesAffectionBonus(petAfterProgress, state.ownerSkillTree),
+    collectibleBonus: getCollectibleAffectionBonus(state.ownedCollectibles),
   })
 
   let nextPet = { ...petAfterProgress, affection: Math.min(100, petAfterProgress.affection + affectionGain) }

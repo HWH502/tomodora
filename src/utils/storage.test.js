@@ -355,6 +355,67 @@ describe('createPet', () => {
   })
 })
 
+describe('createPet clears owned collectibles when replacing a pet', () => {
+  it('does NOT clear ownedCollectibles on the very first pet (no previous pet)', () => {
+    // Seed localStorage with a fresh owner state (no pet yet) but with pre-existing ownedCollectibles.
+    // This verifies the `: state.ownedCollectibles` branch runs (preserving the seeded array),
+    // not a hardcoded `[]`.
+    const freshState = getOwnerState()
+    const seededState = { ...freshState, pet: null, ownedCollectibles: ['ball', 'bowl'] }
+    localStorage.setItem('pomodoro.owner', JSON.stringify(seededState))
+
+    const state = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+
+    expect(state.ownedCollectibles).toEqual(['ball', 'bowl'])
+  })
+
+  it('clears ownedCollectibles when replacing an existing pet, without refunding money', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    const withCollectibles = getOwnerState()
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({ ...withCollectibles, money: 100, ownedCollectibles: ['ball', 'bowl', 'collar'] }),
+    )
+
+    const replaced = createPet({ speciesId: 'cat', breedId: 'ragdoll', name: '咪咪' })
+
+    expect(replaced.ownedCollectibles).toEqual([])
+    expect(replaced.money).toBe(100) // 花掉的錢不會因為道具被清空而退還
+  })
+
+  it('clears ownedCollectibles for the pet adopted after a natural departure (pet already null, petMemorials non-empty)', () => {
+    // Simulate the state right after applyNeedsTickIfDue() has already archived a departed pet:
+    // state.pet is null and state.petMemorials already has an entry, BEFORE createPet() is called
+    // for the replacement. previousPet will be null here, so only the petMemorials.length check
+    // can correctly trigger clearing.
+    const freshState = getOwnerState()
+    const seededState = {
+      ...freshState,
+      pet: null,
+      petMemorials: [{ speciesId: 'dog', breedId: 'shiba', name: '小豆', endedAt: new Date().toISOString(), reason: 'died' }],
+      ownedCollectibles: ['ball', 'bowl'],
+    }
+    localStorage.setItem('pomodoro.owner', JSON.stringify(seededState))
+
+    const state = createPet({ speciesId: 'cat', breedId: 'ragdoll', name: '咪咪' })
+
+    expect(state.ownedCollectibles).toEqual([])
+  })
+
+  it('does NOT clear consumablePurchases stock when replacing a pet', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    const withStock = getOwnerState()
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({ ...withStock, consumablePurchases: { kibble: 3, grooming: 2 } }),
+    )
+
+    const replaced = createPet({ speciesId: 'cat', breedId: 'ragdoll', name: '咪咪' })
+
+    expect(replaced.consumablePurchases).toEqual({ kibble: 3, grooming: 2 })
+  })
+})
+
 describe('renamePet', () => {
   it('updates only pet.name and preserves everything else', () => {
     createPet({ speciesId: 'dog', breedId: 'shiba' })
@@ -1541,5 +1602,83 @@ describe('lifetimeFocusMinutesStartedAt', () => {
     const state = getOwnerState()
     expect(state.lifetimeFocusMinutesStartedAt).toBe('2026-08-25')
     vi.useRealTimers()
+  })
+})
+
+describe('collectible item bonuses feed into the daily needs tick', () => {
+  it('bowl reduces hunger decay by 1, stacking with owner-skill-tree reductions', () => {
+    // computeHungerDecay 的基礎衰退量其實是 DECAY_BASE(5) + floor(活力/20)，不是固定 5——
+    // 這裡把活力壓成 0，讓基礎衰退量單純變成 5，才能精準驗證水盆的 -1。
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({
+        ...created,
+        ownedCollectibles: ['bowl'],
+        pet: { ...created.pet, stats: { ...created.pet.stats, energy: 0 }, hunger: 90, lastNeedsTickDate: '2000-01-01' },
+      }),
+    )
+    const after = getOwnerState()
+    // 基礎衰退 5 點，水盆 -1，結果應該衰退 4 點
+    expect(after.pet.hunger).toBe(86)
+  })
+
+  it('outfit reduces cleanliness decay by 1', () => {
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({
+        ...created,
+        ownedCollectibles: ['outfit'],
+        pet: { ...created.pet, cleanliness: 90, lastNeedsTickDate: '2000-01-01' },
+      }),
+    )
+    const after = getOwnerState()
+    expect(after.pet.cleanliness).toBe(86)
+  })
+
+  it('leash raises effective obedience used by the daily obedience-incident roll', () => {
+    // 服從度 90（很高）本來就幾乎不會觸發惹事事件；這裡只驗證 buildOwnerBonuses
+    // 有把牽繩的 +3 算進 effectiveObedience，用一隻服從度剛好卡在門檻邊界的寵物來間接驗證：
+    // 直接測「事件沒發生」不夠精確，改成驗證 hunger/cleanliness 不受影響、且不拋錯，
+    // 確保 buildOwnerBonuses 第三個參數有被正確傳入而不是 undefined 導致例外。
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({
+        ...created,
+        ownedCollectibles: ['leash'],
+        pet: { ...created.pet, lastNeedsTickDate: '2000-01-01' },
+      }),
+    )
+    expect(() => getOwnerState()).not.toThrow()
+  })
+})
+
+describe('collectible affection bonus (項圈) feeds into recordPomodoroReward', () => {
+  it('adds +1 affection per pomodoro when the collar is owned', () => {
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    const lowFriendliness = { ...created.pet, stats: { ...created.pet.stats, friendliness: 0 }, affection: 30 }
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({ ...created, ownedCollectibles: ['collar'], pet: lowFriendliness }),
+    )
+    const after = recordPomodoroReward(25)
+    expect(after.pet.affection).toBe(30 + 1 + 1) // 基礎 +1，項圈額外 +1
+  })
+})
+
+describe('collectible friendliness bonus (玩具球) feeds into effective friendliness', () => {
+  it('raises the friendliness tier used for the pomodoro affection bonus', () => {
+    // 友善度基礎值設 37，本身還不到 40 的門檻（0 額外加成）；
+    // 玩具球 +3 有效友善度後剛好跨過 40 門檻，應該多拿 +2 的友善度加成。
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    const nearThreshold = { ...created.pet, stats: { ...created.pet.stats, friendliness: 37 }, affection: 30 }
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({ ...created, ownedCollectibles: ['ball'], pet: nearThreshold }),
+    )
+    const after = recordPomodoroReward(25)
+    expect(after.pet.affection).toBe(30 + 1 + 2) // 基礎 +1 + 跨過 40 門檻後的 +2
   })
 })

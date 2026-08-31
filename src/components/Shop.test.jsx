@@ -32,6 +32,23 @@ describe('Shop', () => {
     expect(screen.getByText('20 💰')).toBeInTheDocument()
   })
 
+  describe('Shop collectible effect labels', () => {
+    it('shows the functional effect under each collectible item name', () => {
+      render(<Shop {...defaultProps} />)
+      expect(screen.getByText('飽食度衰退 −1')).toBeInTheDocument() // 水盆
+      expect(screen.getByText('服從度 +3')).toBeInTheDocument() // 牽繩
+      expect(screen.getByText('友善度 +3')).toBeInTheDocument() // 玩具球
+      expect(screen.getByText('好感度成長 +1')).toBeInTheDocument() // 項圈
+      expect(screen.getByText('潔淨度衰退 −1')).toBeInTheDocument() // 衣服
+    })
+
+    it('does not render an effect line for consumables', () => {
+      render(<Shop {...defaultProps} />)
+      const kibbleCard = screen.getByText('飼料').closest('li')
+      expect(kibbleCard.querySelector('.shop-item__effect')).toBeNull()
+    })
+  })
+
   it('shows the current money total in the header chip', () => {
     render(<Shop {...defaultProps} money={150} />)
     expect(screen.getByText('💰 金錢：150')).toBeInTheDocument()

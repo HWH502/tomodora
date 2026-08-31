@@ -20,6 +20,7 @@ export default function Shop({ money, ownedCollectibles, consumablePurchases, ow
           {item.emoji}
         </div>
         <p className="shop-item__name">{item.name}</p>
+        {item.effect && <p className="shop-item__effect">{item.effect.label}</p>}
         {!isCollectible && <span className="shop-item__stock-badge">庫存 {stock}</span>}
         <p className="shop-item__price">
           {price < item.cost && <s className="shop-item__original-price">{item.cost}</s>}{' '}

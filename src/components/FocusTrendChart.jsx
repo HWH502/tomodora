@@ -82,6 +82,24 @@ export default function FocusTrendChart({ history }) {
             月
           </button>
         </div>
+
+        <div className="focus-trend__pager">
+          <button type="button" aria-label="上一頁" className="focus-pager-btn" onClick={() => setOffset((o) => o + PAGE_SIZE)}>
+            ‹
+          </button>
+          <span data-testid="focus-trend-range-label" className="focus-trend__range-label">
+            {rangeLabel}
+          </span>
+          <button
+            type="button"
+            aria-label="下一頁"
+            className="focus-pager-btn"
+            disabled={offset === 0}
+            onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
+          >
+            ›
+          </button>
+        </div>
       </div>
 
       <div className="focus-trend__bars">
@@ -115,24 +133,6 @@ export default function FocusTrendChart({ history }) {
             </div>
           )
         })}
-      </div>
-
-      <div className="focus-trend__pager">
-        <button type="button" aria-label="上一頁" className="focus-pager-btn" onClick={() => setOffset((o) => o + PAGE_SIZE)}>
-          ‹
-        </button>
-        <span data-testid="focus-trend-range-label" className="focus-trend__range-label">
-          {rangeLabel}
-        </span>
-        <button
-          type="button"
-          aria-label="下一頁"
-          className="focus-pager-btn"
-          disabled={offset === 0}
-          onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
-        >
-          ›
-        </button>
       </div>
     </section>
   )
