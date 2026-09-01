@@ -6,12 +6,7 @@ import PetNeedsBars from './PetNeedsBars'
 import PetPortrait from './PetPortrait'
 import PetSkills from './PetSkills'
 import PetStatsCard from './PetStatsCard'
-import { canVisitVet, DANGER_THRESHOLD, RANDOM_EVENT_LABELS, VET_COST } from '../utils/petNeeds'
-
-const EVENT_LABELS = {
-  ...RANDOM_EVENT_LABELS,
-  obedienceIncident: '寵物惹了點小麻煩',
-}
+import { canVisitVet, DANGER_THRESHOLD, EVENT_LABELS, VET_COST } from '../utils/petNeeds'
 
 const MS_PER_DAY = 86400000
 

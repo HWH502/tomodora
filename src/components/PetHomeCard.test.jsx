@@ -34,6 +34,12 @@ describe('PetHomeCard', () => {
     expect(screen.getByText('91%')).toBeInTheDocument()
   })
 
+  it('labels the affection need bar as 好感度, not 心情', () => {
+    render(<PetHomeCard pet={basePet} />)
+    expect(screen.getByText('好感度')).toBeInTheDocument()
+    expect(screen.queryByText('心情')).not.toBeInTheDocument()
+  })
+
   it('shows the happy mood chip for a healthy, well-fed, clean pet', () => {
     render(<PetHomeCard pet={basePet} />)
     expect(screen.getByText('開心', { exact: false })).toBeInTheDocument()

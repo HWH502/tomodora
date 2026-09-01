@@ -254,8 +254,11 @@ describe('getOwnerState', () => {
       // which consumes one kibble from stock: 3 -> 2.
       expect(state.consumablePurchases).toEqual({ kibble: 2 })
 
-      // migration persists, so a second read doesn't re-migrate or drift
-      expect(getOwnerState()).toEqual(state)
+      // migration persists, so a second read doesn't re-migrate or drift.
+      // (the first read's _dailyTickSummary is a one-shot, in-memory-only field from
+      // the tick that just ran; it's never persisted, so the second read won't have it.)
+      const { _dailyTickSummary, ...persistedShape } = state
+      expect(getOwnerState()).toEqual(persistedShape)
     })
 
     it('rolls a personality when the legacy data has none', () => {
@@ -984,6 +987,105 @@ describe('daily tick consumes stocked consumables', () => {
     // 健康度不自然衰減，飽食度/潔淨度都 >=50 觸發 +3 連動加分，再加上營養品基礎值 2 點：50 + 3 + 2 = 55
     expect(after.pet.health).toBe(55)
     expect(after.consumablePurchases.supplement).toBe(0)
+  })
+})
+
+describe('daily tick summary for the "welcome back" notification', () => {
+  it('does not attach a summary when no tick was due', () => {
+    createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    const after = getOwnerState()
+    expect(after._dailyTickSummary).toBeUndefined()
+  })
+
+  it('captures net need deltas and consumed stock after a successful tick, with no events', () => {
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({
+        ...created,
+        pet: {
+          ...created.pet,
+          stats: { ...created.pet.stats, energy: 0 },
+          hunger: 50,
+          cleanliness: 90,
+          health: 90,
+          affection: 90,
+          lastNeedsTickDate: null,
+        },
+        consumablePurchases: { kibble: 2 },
+      }),
+    )
+
+    // Math.random 恆為 0.99，避開服從度惹事事件跟隨機事件，只驗證結算摘要本身的計算。
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    let after
+    try {
+      after = getOwnerState()
+    } finally {
+      randomSpy.mockRestore()
+    }
+
+    // 飽食度：90 - 5(衰減) + 5(飼料回補) = 90 抵銷 → delta 0；潔淨度：90 - 5(衰減) = 85 → delta -5；
+    // 健康度：飽食度與潔淨度都 >= 50 觸發健康連動加分 +3 → delta +3；好感度不受影響 → delta 0。
+    expect(after._dailyTickSummary).toEqual({
+      type: 'tick',
+      deltas: { hunger: 0, cleanliness: -5, health: 3, affection: 0 },
+      consumed: [{ itemId: 'kibble', count: 1 }],
+      events: [],
+    })
+  })
+
+  it('records triggered events in the summary', () => {
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({
+        ...created,
+        pet: {
+          ...created.pet,
+          stats: { ...created.pet.stats, obedience: 0 },
+          hunger: 90,
+          cleanliness: 90,
+          health: 90,
+          affection: 90,
+          lastNeedsTickDate: null,
+        },
+      }),
+    )
+
+    // Math.random 恆為 0，讓服從度惹事事件必定觸發，同時因好感度仍在安全門檻之上，
+    // rollDeparture 會直接短路不呼叫 random()，寵物不會意外離家出走。
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    let after
+    try {
+      after = getOwnerState()
+    } finally {
+      randomSpy.mockRestore()
+    }
+
+    expect(after._dailyTickSummary.type).toBe('tick')
+    expect(after._dailyTickSummary.events).toEqual(['obedienceIncident'])
+  })
+
+  it('reports a departed summary instead of need deltas when the tick kills the pet', () => {
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({ ...created, pet: { ...created.pet, hunger: 1, cleanliness: 1, health: 1, lastNeedsTickDate: null } }),
+    )
+    const after = getOwnerState()
+    expect(after._dailyTickSummary).toEqual({ type: 'departed', reason: 'health' })
+  })
+
+  it('does not leak the transient _dailyTickSummary field into localStorage', () => {
+    const created = createPet({ speciesId: 'dog', breedId: 'shiba', name: '小豆' })
+    localStorage.setItem(
+      'pomodoro.owner',
+      JSON.stringify({ ...created, pet: { ...created.pet, hunger: 50, lastNeedsTickDate: null } }),
+    )
+    getOwnerState()
+    const persisted = JSON.parse(localStorage.getItem(OWNER_KEY))
+    expect(persisted).not.toHaveProperty('_dailyTickSummary')
   })
 })
 

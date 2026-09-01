@@ -96,7 +96,7 @@ export default function PetHomeCard({ pet }) {
         <div className="pet-home-card__needs">
           <NeedBar label="飽食度" value={pet.hunger} variant="hunger" />
           <NeedBar label="潔淨度" value={pet.cleanliness} variant="cleanliness" />
-          <NeedBar label="心情" value={pet.affection} variant="mood" />
+          <NeedBar label="好感度" value={pet.affection} variant="mood" />
         </div>
       </div>
     </section>

@@ -144,7 +144,7 @@ export function incrementTodayCount() {
 }
 
 function saveOwnerState(state) {
-  const { _autoPurchaseLog, ...toPersist } = state
+  const { _autoPurchaseLog, _dailyTickSummary, ...toPersist } = state
   safeSetItem(OWNER_KEY, JSON.stringify(toPersist))
   return state
 }
@@ -246,11 +246,18 @@ function runAutoCare({ pet, ownerSkillTree, money }) {
   return { hunger, cleanliness, money: remainingMoney, purchases }
 }
 
+function diffConsumedStock(before, after) {
+  return Object.keys(before)
+    .map((itemId) => ({ itemId, count: (before[itemId] || 0) - (after[itemId] || 0) }))
+    .filter((entry) => entry.count > 0)
+}
+
 function applyNeedsTickIfDue(state) {
   if (!state.pet) return state
   const today = todayDateString()
   if (state.pet.lastNeedsTickDate === today) return state
 
+  const beforePet = state.pet
   const ownerBonuses = buildOwnerBonuses(state.pet, state.ownerSkillTree, state.ownedCollectibles)
   const petSkillIds = getUnlockedPetSkillIds(state.pet)
   const consumableRestoreAmounts = buildConsumableRestoreAmounts(state.ownerSkillTree)
@@ -269,6 +276,7 @@ function applyNeedsTickIfDue(state) {
       pet: null,
       petMemorials: [...state.petMemorials, archivePet(result.pet, new Date().toISOString(), result.departureReason)],
       consumablePurchases: result.consumableStock,
+      _dailyTickSummary: { type: 'departed', reason: result.departureReason },
     }
   }
 
@@ -281,11 +289,24 @@ function applyNeedsTickIfDue(state) {
   const autoCare = runAutoCare({ pet: nextPet, ownerSkillTree: state.ownerSkillTree, money: moneyAfterTick })
   nextPet = { ...nextPet, hunger: autoCare.hunger, cleanliness: autoCare.cleanliness }
 
+  const dailyTickSummary = {
+    type: 'tick',
+    deltas: {
+      hunger: nextPet.hunger - beforePet.hunger,
+      cleanliness: nextPet.cleanliness - beforePet.cleanliness,
+      health: nextPet.health - beforePet.health,
+      affection: nextPet.affection - beforePet.affection,
+    },
+    consumed: diffConsumedStock(state.consumablePurchases, result.consumableStock),
+    events: result.events,
+  }
+
   const nextState = {
     ...state,
     money: autoCare.money,
     pet: nextPet,
     consumablePurchases: result.consumableStock,
+    _dailyTickSummary: dailyTickSummary,
   }
 
   return autoCare.purchases.length > 0 ? { ...nextState, _autoPurchaseLog: autoCare.purchases } : nextState

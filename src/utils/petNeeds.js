@@ -117,6 +117,11 @@ export const RANDOM_EVENT_LABELS = {
   wanderedOff: '走失片刻嚇壞飼主',
 }
 
+export const EVENT_LABELS = {
+  ...RANDOM_EVENT_LABELS,
+  obedienceIncident: '寵物惹了點小麻煩',
+}
+
 export function buildEventWeights({ wanderedOffReduced = false } = {}) {
   const weights = Object.fromEntries(RANDOM_EVENTS.map((e) => [e.id, 1]))
   if (wanderedOffReduced) {

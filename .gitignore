@@ -15,11 +15,6 @@ dist-ssr
 # 寵物美術素材：暫時都不進 git
 # 1024px 原始圖是本機備份，App 用不到，長期都不需要進 git
 src/assets/pets_originals_1024
-# 256x256 正式圖是 App 真正會用到的素材，目前先不存檔；
-# 之後要把素材納入版本控制時，把下面兩行刪掉即可。
-# 注意：只排除圖片檔，同資料夾的 STYLE_GUIDE.md / PROMPTS.md 仍在 git 裡。
-src/assets/pets/**/*.png
-src/assets/pets/**/.gitkeep
 
 # Git worktrees created for isolated task work
 .claude/worktrees/
@@ -31,6 +26,14 @@ src/assets/skills/**/.gitkeep
 
 # Subagent-driven-development scratch workspace (per-plan ledgers/briefs/reports)
 .superpowers/
+
+# Internal dev/AI-agent working docs — kept locally, not pushed to GitHub
+CLAUDE.md
+PROJECT_STATUS.md
+docs/
+.claude/
+src/assets/pets/STYLE_GUIDE.md
+src/assets/pets/PROMPTS.md
 
 # Editor directories and files
 .vscode/*

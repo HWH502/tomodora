@@ -21,6 +21,7 @@ export function useOwner() {
   const [initialState] = useState(getOwnerState)
   const [ownerState, setOwnerState] = useState(initialState)
   const [autoPurchaseLog, setAutoPurchaseLog] = useState(initialState._autoPurchaseLog ?? null)
+  const [dailyTickSummary, setDailyTickSummary] = useState(initialState._dailyTickSummary ?? null)
   const [focusHistory, setFocusHistory] = useState(getFocusHistory)
   const [focusHistoryTrimmed, setFocusHistoryTrimmed] = useState(false)
 
@@ -92,6 +93,7 @@ export function useOwner() {
   }, [])
 
   const clearAutoPurchaseLog = useCallback(() => setAutoPurchaseLog(null), [])
+  const clearDailyTickSummary = useCallback(() => setDailyTickSummary(null), [])
 
   const petProgressCounts = useMemo(() => getOwnerPetProgressCounts(), [ownerState])
 
@@ -112,6 +114,8 @@ export function useOwner() {
     petProgressCounts,
     autoPurchaseLog,
     clearAutoPurchaseLog,
+    dailyTickSummary,
+    clearDailyTickSummary,
     focusHistory,
     focusHistoryTrimmed,
     clearFocusHistoryTrimmed,

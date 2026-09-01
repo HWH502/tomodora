@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTimer } from './hooks/useTimer'
 import { useOwner } from './hooks/useOwner'
+import DailyTickSummaryModal from './components/DailyTickSummaryModal'
 import HomePage from './components/HomePage'
 import PageBlobs from './components/PageBlobs'
 import Settings from './components/Settings'
@@ -31,6 +32,8 @@ function App() {
     petProgressCounts,
     autoPurchaseLog,
     clearAutoPurchaseLog,
+    dailyTickSummary,
+    clearDailyTickSummary,
     focusHistory,
     focusHistoryTrimmed,
     clearFocusHistoryTrimmed,
@@ -67,6 +70,8 @@ function App() {
           </button>
         </p>
       )}
+
+      <DailyTickSummaryModal summary={dailyTickSummary} onClose={clearDailyTickSummary} />
 
       {autoPurchaseLog && autoPurchaseLog.length > 0 && (
         <p className="app__auto-purchase-toast" role="status">
